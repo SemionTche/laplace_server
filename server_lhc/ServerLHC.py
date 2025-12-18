@@ -3,12 +3,11 @@ import json
 import zmq
 import threading
 import time
-import configparser
-
-cfg = configparser.ConfigParser()
-
 
 class ServerLHC(threading.Thread):
+    '''
+    The host should be improved (currently not working to close the server, need to directly reed the ip of the process)
+    '''
     def __init__(self, 
                  address: str,
                  host: str,
@@ -106,6 +105,9 @@ class ServerLHC(threading.Thread):
         Set a new dictionary to transmit.
         '''
         self._data = newData
+    
+    def dictionary_format(self):
+        pass
 
     def run(self) -> None:
         '''
@@ -178,6 +180,7 @@ class ServerLHC(threading.Thread):
         # create a client ZMQ
         ctx = zmq.Context()
         sock = ctx.socket(zmq.REQ)
+        print(self.addressForClient)
         sock.connect(self.addressForClient)
 
         try:
@@ -195,22 +198,11 @@ class ServerLHC(threading.Thread):
 
 
 if __name__ == "__main__":
-    # cfg.read("visu_diagServ/visu/confServer.ini")
-    # print(cfg.sections())
-
-    # print("cwd =", os.getcwd())
-    # print("exists:", os.path.exists("visu_diagServ/visu/confServer.ini"))
-
-    # host = cfg["diagServer"].get("serverHost")
-    # port = cfg["diagServer"].get("serverPort")
 
     address = f"tcp://*:1234"
     data = {"hello": "world", "positions": [42.], "unit": "bar"}
-    # print(f"host = {host}")
-    # print(f"port = {port}")
-    # print(f"address = {address}")
 
-    server = GasServer(address=address, host="host", data=data, name="gas")
+    server = ServerLHC(address=address, freedom=0, host="host", data=data, name="gas")
     server.start()
 
     try:
