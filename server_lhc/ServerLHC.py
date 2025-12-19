@@ -62,8 +62,6 @@ class ServerLHC(threading.Thread):
         self.socket.bind(self._address)
 
         self._server_ip = self.get_my_ip()
-        
-        print(f"Server {self.name} running on: {self.address_for_client}")
 
         # creating the Thread of the server
         self._running = threading.Event()
@@ -130,8 +128,10 @@ class ServerLHC(threading.Thread):
         '''
         self.dictionary_format(new_data)
         self._data = new_data
-    
+
+
     def dictionary_format(self, data):
+        required_keys = []
         pass
 
     def device_format(self) -> None:
@@ -142,6 +142,7 @@ class ServerLHC(threading.Thread):
     def freedom_format(self) -> None:
         if not isinstance(self.freedom, int):
             raise ValueError(f"Error: 'freedom' argument must be an interger not: {type(self.freedom)}")
+
 
     def run(self) -> None:
         '''
@@ -156,6 +157,7 @@ class ServerLHC(threading.Thread):
             '__FREEDOM__' : degree of freedom. 1 for a gas controler.
         '''
         print(f"[Server {self.name}] Running on {self.address}")
+        print(f"[Server {self.name}] To connect with, use {self.address_for_client}")
 
         while self._running.is_set():
             
