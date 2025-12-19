@@ -1,18 +1,18 @@
 # libraries
 import json
 import zmq
+import socket as sock  # rename to avoid conflict with zmq socket
 import threading
 import time
 
 class ServerLHC(threading.Thread):
     '''
-    The host should be improved (currently not working to close the server, need to directly reed the ip of the process)
     '''
     def __init__(self, 
                  address: str,
-                 host: str,
                  freedom: int,
-                 data: dict | None = None, 
+                 device: str,
+                 data: dict,
                  name: str = "Unknown"):
         '''
         Visu server made to transmit a dictionnay 'data' to any client sending '__GET__'
@@ -20,7 +20,7 @@ class ServerLHC(threading.Thread):
 
         To start the server, create an instance of the server and use the 'start' method
         to assing its own thread:
-            serv = diagServer()
+            serv = ServerLHC()
             serv.start()
 
         To update the dictionnary, use 'setData' method:
@@ -44,70 +44,104 @@ class ServerLHC(threading.Thread):
         '''
         
         super().__init__() # heritage from Thread
+        
         self._address = address
-        self.freedom = freedom
-        self.name = name
-        self._host = host
         self._data = data or {}
+        self.freedom = freedom
+        self.device = device
+        self.name = name
+        
+        # format
+        self.device_format()
+        self.freedom_format()
+        self.set_data(data)
+
+        # server context
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         self.socket.bind(self._address)
 
+        self._server_ip = self.get_my_ip()
+        
+        print(f"Server {self.name} running on: {self.address_for_client}")
+
+        # creating the Thread of the server
         self._running = threading.Event()
         self._running.set()
+
+
+    def get_my_ip(self) -> str:
+        '''
+        Helper returning the IPV4 address of the process running.
+        '''
+        s = sock.socket(sock.AF_INET, sock.SOCK_DGRAM)
+        try:
+            # No traffic is actually sent
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+        finally:
+            s.close()
 
     @property
     def address(self) -> str:
         '''
-        property to avoid 'address' modification.
+        Helper to avoid 'address' direct modification.
         '''
         return self._address
-
-    @property
-    def host(self):
-        '''
-        property to avoid 'host' modification.
-        '''
-        return self._host
     
     @property
     def data(self) -> dict:
         '''
-        property to avoid 'data' direct modification.
-        To modify 'data', use 'setData'.
+        Helper to avoid 'data' direct modification.
+        To modify 'data', use 'set_data'.
         '''
         return self._data
     
     @property
+    def server_ip(self) -> str:
+        '''
+        Helper to avoid 'server_ip' direct modification.
+        '''
+        return self._server_ip
+    
+    @property
     def running(self):
         '''
-        property to avoid 'running' modification.
+        Helper to avoid 'running' direct modification.
         '''
         return self._running
 
     @property
-    def addressForClient(self):
+    def address_for_client(self):
         '''
-        property that return the 'address' for the client.
-        'tcp://<IP server>:port'
+        Helper that return the 'address' for the client.
+        '<protocol>://<IP server>:<port>'
         '''
         proto, rest = self.address.split("://")
-        host, port = rest.split(":")
+        _, port = rest.split(":")
 
-        if host == "*":         # if the server is listening everywhere
-            host = self.host    # use the server host refered in the class
-                                # else use the specific adress required by the server
+        address_for_client = f"{proto}://{self.server_ip}:{port}"
 
-        return f"{proto}://{host}:{port}"
+        return address_for_client
 
-    def setData(self, newData: dict) -> None:
+    def set_data(self, new_data: dict) -> None:
         '''
         Set a new dictionary to transmit.
         '''
-        self._data = newData
+        self.dictionary_format(new_data)
+        self._data = new_data
     
-    def dictionary_format(self):
+    def dictionary_format(self, data):
         pass
+
+    def device_format(self) -> None:
+        available_devices = ["__GAS__", "__MOTORS__", "__CAMERA__", "__BO__"]
+        if self.device not in available_devices:
+            raise ValueError(f"Error: 'device' argument must be choosen among the availabel devices: {available_devices}")
+
+    def freedom_format(self) -> None:
+        if not isinstance(self.freedom, int):
+            raise ValueError(f"Error: 'freedom' argument must be an interger not: {type(self.freedom)}")
 
     def run(self) -> None:
         '''
@@ -129,12 +163,12 @@ class ServerLHC(threading.Thread):
                 
                 if self.socket.poll(100): # poll for 100 ms
                     message = self.socket.recv_string()
-                    print(f"[Server] Received: '{message}'")
+                    print(f"[Server {self.name}] Received: '{message}'")
                     
                     # stop the thread on message '__STOP__'
                     if message == "__STOP__":
-                        self.socket.send_string("stopping") # interrupt the loop
-                        break
+                        self.socket.send_string("stopping...")
+                        break                                       # interrupt the loop
                     
                     # send the dictionnary on message '__GET__'
                     elif message == "__GET__":
@@ -145,10 +179,10 @@ class ServerLHC(threading.Thread):
                         self.socket.send_string(self.name)
                     
                     elif message == "__DEVICE__":
-                        self.socket.send_string("__GAS__")
+                        self.socket.send_string(f"{self.device}")
                     
                     elif message == "__FREEDOM__":
-                        self.socket.send_string("1")
+                        self.socket.send_string(f"{self.freedom}")
                     
                     elif message == "__PING__":
                         self.socket.send_string("__PONG__")
@@ -179,18 +213,18 @@ class ServerLHC(threading.Thread):
 
         # create a client ZMQ
         ctx = zmq.Context()
-        sock = ctx.socket(zmq.REQ)
-        print(self.addressForClient)
-        sock.connect(self.addressForClient)
+        socket = ctx.socket(zmq.REQ)
+
+        socket.connect(self.address_for_client)
 
         try:
             # try to send '__STOP__' to the server
-            sock.send_string("__STOP__")
-            sock.recv_string()  # response is mandatory in REP
+            socket.send_string("__STOP__")
+            socket.recv_string()  # response is mandatory in REP
         except Exception as e:
             print(f"[Server {self.name}] Stop error:", e)
 
-        sock.close(0) # close the client
+        socket.close(0) # close the client
         ctx.term()    # close the client context
 
         self._running.clear() # update the flag
@@ -202,7 +236,7 @@ if __name__ == "__main__":
     address = f"tcp://*:1234"
     data = {"hello": "world", "positions": [42.], "unit": "bar"}
 
-    server = ServerLHC(address=address, freedom=0, host="host", data=data, name="gas")
+    server = ServerLHC(address=address, freedom=0, device="_GAS__", data=data, name="gas")
     server.start()
 
     try:
