@@ -4,10 +4,13 @@ import zmq
 import socket as sock  # rename to avoid conflict with zmq socket
 import threading
 import time
+from PyQt6.QtCore import pyqtSignal
 
 class ServerLHC(threading.Thread):
     '''
     '''
+    saving_path_changed = pyqtSignal(str)
+    
     def __init__(self, 
                  address: str,
                  freedom: int,
@@ -135,7 +138,7 @@ class ServerLHC(threading.Thread):
         pass
 
     def device_format(self) -> None:
-        available_devices = ["__GAS__", "__MOTORS__", "__CAMERA__", "__BO__"]
+        available_devices = ["__GAS__", "__MOTORS__", "__CAMERA__", "__OPT__"]
         if self.device not in available_devices:
             raise ValueError(f"Error: 'device' argument must be choosen among the availabel devices: {available_devices}")
 
@@ -164,6 +167,8 @@ class ServerLHC(threading.Thread):
             try:
                 
                 if self.socket.poll(100): # poll for 100 ms
+                    # message = self.socket.recv_json()
+                    # cmd = message.get("cmd")
                     message = self.socket.recv_string()
                     print(f"[Server {self.name}] Received: '{message}'")
                     
@@ -189,6 +194,14 @@ class ServerLHC(threading.Thread):
                     elif message == "__PING__":
                         self.socket.send_string("__PONG__")
                     
+                    elif message == "SAVE":
+                        path = message.get("path")
+                        if not path:
+                            self.socket.send_string("Error: missing path")
+                        else:
+                            self.emit_saving_path_changed(path)
+                            self.socket.send_string("Saving path changed")
+                    
                     else :
                         self.socket.send_string("Error: unable to understand the demande")
 
@@ -202,6 +215,9 @@ class ServerLHC(threading.Thread):
         self.socket.close(0) # close the server
         self.context.term()  # close the context
         print(f"[Server {self.name}] Stopped")
+
+    def emit_saving_path_changed(self, path):
+        self.saving_path_changed.emit(path)
 
     def stop(self) -> None:
         """
@@ -238,7 +254,7 @@ if __name__ == "__main__":
     address = f"tcp://*:1234"
     data = {"hello": "world", "positions": [42.], "unit": "bar"}
 
-    server = ServerLHC(address=address, freedom=0, device="_GAS__", data=data, name="gas")
+    server = ServerLHC(address=address, freedom=1, device="__GAS__", data=data, name="gas")
     server.start()
 
     try:
