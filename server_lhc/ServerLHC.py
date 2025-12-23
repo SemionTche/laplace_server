@@ -1,10 +1,8 @@
 # libraries
-import json
 import zmq
 import socket as sock  # rename to avoid conflict with zmq socket
 import threading
 import time
-from PyQt6.QtCore import pyqtSignal
 
 # project
 from server_lhc.protocol import (
@@ -16,8 +14,6 @@ from server_lhc.protocol import (
 class ServerLHC(threading.Thread):
     '''
     '''
-    saving_path_changed = pyqtSignal(str)
-    
     def __init__(self, 
                  address: str,
                  freedom: int,
@@ -78,6 +74,8 @@ class ServerLHC(threading.Thread):
         # creating the Thread of the server
         self._running = threading.Event()
         self._running.set()
+
+        self.on_saving_path_changed = None # callable to emit a signal when save message is received
 
 
     def get_my_ip(self) -> str:
@@ -250,7 +248,8 @@ class ServerLHC(threading.Thread):
         print(f"[Server {self.name}] Stopped")
 
     def emit_saving_path_changed(self, path):
-        self.saving_path_changed.emit(path)
+        if self.on_saving_path_changed:
+            self.on_saving_path_changed(path)
 
     def stop(self) -> None:
         """
