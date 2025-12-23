@@ -8,7 +8,7 @@ from PyQt6.QtCore import pyqtSignal
 
 # project
 from server_lhc.protocol import (
-    CMD_INFO, CMD_PING, CMD_GET, CMD_SAVE, CMD_STOP,
+    CMD_INFO, CMD_PING, CMD_GET, CMD_SAVE, CMD_STOP, AVAILABLE_DEVICES,
     make_info_reply, make_pong,
     make_get_reply, make_save_reply, make_error
 )
@@ -147,9 +147,8 @@ class ServerLHC(threading.Thread):
         pass
 
     def device_format(self) -> None:
-        available_devices = ["GAS", "MOTOR", "CAMERA", "OPT"]
-        if self.device not in available_devices:
-            raise ValueError(f"Error: 'device' argument must be choosen among the availabel devices: {available_devices}")
+        if self.device not in AVAILABLE_DEVICES:
+            raise ValueError(f"Error: 'device' argument must be choosen among the availabel devices: {AVAILABLE_DEVICES}")
 
     def freedom_format(self) -> None:
         if not isinstance(self.freedom, int):
