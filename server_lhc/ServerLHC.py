@@ -6,6 +6,12 @@ import threading
 import time
 from PyQt6.QtCore import pyqtSignal
 
+# project
+from server_lhc.protocol import (
+    CMD_INFO, CMD_PING, CMD_GET, CMD_SAVE, CMD_STOP,
+    make_info_reply, make_pong, make_message
+)
+
 class ServerLHC(threading.Thread):
     '''
     '''
@@ -170,40 +176,46 @@ class ServerLHC(threading.Thread):
                 if self.socket.poll(100): # poll for 100 ms
                     message = self.socket.recv_json()
                     cmd = message.get("cmd")
-                    answering_to = message.get("from")
-                    print(f"[Server {self.name}] Received: '{cmd}' from '{answering_to}'")
+                    target = message.get("from")
+                    print(f"[Server {self.name}] Received: '{cmd}' from '{target}'")
                     
                     # stop the thread on message 'STOP'
                     if cmd == "STOP":
                         self.socket.send_string("stopping...")
                         break                                       # interrupt the loop
                     
-                    elif cmd == "INFO":
-                        response = self.making_info(answering_to)
+                    elif cmd == CMD_INFO:
+                        response = make_info_reply(
+                            sender = self.name,
+                            target = target,
+                            device = self.device,
+                            freedom = self.freedom,
+                            name = self.name,
+                            capabilities = self.capabilities
+                            )
                         self.socket.send_json(response)
 
                     # send the dictionnary on message 'GET'
                     elif cmd == "GET":
-                        response = self.making_get(answering_to)
+                        response = self.making_get(target)
                         self.socket.send_json(response)
                     
-                    elif cmd == "PING":
-                        response = self.making_ping(answering_to)
-                        self.socket.send_json(response)
+                    elif cmd == CMD_PING:
+                        self.socket.send_json(make_pong(self.name, target))
                     
                     elif cmd == "SAVE":
                         payload = message.get("payload")
                         path = payload.get("path")
                         if not path:
-                            response = self.making_error(answering_to, cmd, "Error: missing path")
+                            response = self.making_error(target, cmd, "Error: missing path")
                             self.socket.send_json(response)
                         else:
                             self.emit_saving_path_changed(path)
-                            response = self.making_save(answering_to)
+                            response = self.making_save(target)
                             self.socket.send_json(response)
                     
                     else :
-                        response = self.making_error(answering_to, cmd, "Error: unable to understand the demande.")
+                        response = self.making_error(target, cmd, "Error: unable to understand the demande.")
                         self.socket.send_string(response)
 
                 else:
@@ -219,35 +231,6 @@ class ServerLHC(threading.Thread):
 
     def emit_saving_path_changed(self, path):
         self.saving_path_changed.emit(path)
-    
-    def making_info(self, answering_to: str) -> dict:
-        response = {
-            "from": self.name,
-            "to": answering_to,
-            "cmd": "INFO",
-            "payload": {
-                "device": self.device,
-                "freedom": self.freedom,
-                "name": self.name,
-                "capabilities": self.capabilities,
-            },
-            "version": "1.0",
-            "error_msg": None,
-            "msg": "Informations transmited."
-        }
-        return response
-    
-    def making_ping(self, answering_to: str) -> dict:
-        response = {
-            "from": self.name,
-            "to": answering_to,
-            "cmd" : "PING",
-            "payload": {"PING": "PONG"},
-            "version": "1.0",
-            "error_msg": None,
-            "msg": "Still alive."
-        }
-        return response
 
     def making_get(self, answering_to: str) -> dict:
         response = {
