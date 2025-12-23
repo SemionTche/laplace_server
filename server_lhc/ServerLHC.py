@@ -66,6 +66,8 @@ class ServerLHC(threading.Thread):
 
         self._server_ip = self.get_my_ip()
 
+        self.capabilities = ["INFO", "PING", "GET", "SAVE", "SET", "STOP"]
+
         # creating the Thread of the server
         self._running = threading.Event()
         self._running.set()
@@ -138,7 +140,7 @@ class ServerLHC(threading.Thread):
         pass
 
     def device_format(self) -> None:
-        available_devices = ["__GAS__", "__MOTORS__", "__CAMERA__", "__OPT__"]
+        available_devices = ["GAS", "MOTOR", "CAMERA", "OPT"]
         if self.device not in available_devices:
             raise ValueError(f"Error: 'device' argument must be choosen among the availabel devices: {available_devices}")
 
@@ -152,12 +154,11 @@ class ServerLHC(threading.Thread):
         Function used while the server is running.
         The server is waiting to receive messages from clients.
         keywords are:
-            '__GET__': transmit the dictionary
-            '__STOP__': stop the server
-            '__NAME'__: transmit the name attribute
-            '__PING__': answer '__PONG__'
-            '__DEVICE__': answer  'diagnostics'
-            '__FREEDOM__' : degree of freedom. 1 for a gas controler.
+            'GET': transmit the dictionary
+            'STOP': stop the server
+            'INFO': transmit the server properties
+            'PING': answer 'PONG'
+            'SAVE':
         '''
         print(f"[Server {self.name}] Running on {self.address}")
         print(f"[Server {self.name}] To connect with, use {self.address_for_client}")
@@ -167,43 +168,43 @@ class ServerLHC(threading.Thread):
             try:
                 
                 if self.socket.poll(100): # poll for 100 ms
-                    # message = self.socket.recv_json()
-                    # cmd = message.get("cmd")
-                    message = self.socket.recv_string()
-                    print(f"[Server {self.name}] Received: '{message}'")
+                    message = self.socket.recv_json()
+                    cmd = message.get("cmd")
+                    answering_to = message.get("from")
+                    print(f"[Server {self.name}] Received: '{cmd}' from '{answering_to}'")
                     
-                    # stop the thread on message '__STOP__'
-                    if message == "__STOP__":
+                    # stop the thread on message 'STOP'
+                    if cmd == "STOP":
                         self.socket.send_string("stopping...")
                         break                                       # interrupt the loop
                     
-                    # send the dictionnary on message '__GET__'
-                    elif message == "__GET__":
-                        response = json.dumps(self.data)
-                        self.socket.send_string(response)
+                    elif cmd == "INFO":
+                        response = self.making_info(answering_to)
+                        self.socket.send_json(response)
+
+                    # send the dictionnary on message 'GET'
+                    elif cmd == "GET":
+                        response = self.making_get(answering_to)
+                        self.socket.send_json(response)
                     
-                    elif message == "__NAME__":
-                        self.socket.send_string(self.name)
+                    elif cmd == "PING":
+                        response = self.making_ping(answering_to)
+                        self.socket.send_json(response)
                     
-                    elif message == "__DEVICE__":
-                        self.socket.send_string(f"{self.device}")
-                    
-                    elif message == "__FREEDOM__":
-                        self.socket.send_string(f"{self.freedom}")
-                    
-                    elif message == "__PING__":
-                        self.socket.send_string("__PONG__")
-                    
-                    elif message == "SAVE":
-                        path = message.get("path")
+                    elif cmd == "SAVE":
+                        payload = message.get("payload")
+                        path = payload.get("path")
                         if not path:
-                            self.socket.send_string("Error: missing path")
+                            response = self.making_error(answering_to, cmd, "Error: missing path")
+                            self.socket.send_json(response)
                         else:
                             self.emit_saving_path_changed(path)
-                            self.socket.send_string("Saving path changed")
+                            response = self.making_save(answering_to)
+                            self.socket.send_json(response)
                     
                     else :
-                        self.socket.send_string("Error: unable to understand the demande")
+                        response = self.making_error(answering_to, cmd, "Error: unable to understand the demande.")
+                        self.socket.send_string(response)
 
                 else:
                     time.sleep(0.01) # wait 10 ms
@@ -218,6 +219,73 @@ class ServerLHC(threading.Thread):
 
     def emit_saving_path_changed(self, path):
         self.saving_path_changed.emit(path)
+    
+    def making_info(self, answering_to: str) -> dict:
+        response = {
+            "from": self.name,
+            "to": answering_to,
+            "cmd": "INFO",
+            "payload": {
+                "device": self.device,
+                "freedom": self.freedom,
+                "name": self.name,
+                "capabilities": self.capabilities,
+            },
+            "version": "1.0",
+            "error_msg": None,
+            "msg": "Informations transmited."
+        }
+        return response
+    
+    def making_ping(self, answering_to: str) -> dict:
+        response = {
+            "from": self.name,
+            "to": answering_to,
+            "cmd" : "PING",
+            "payload": {"PING": "PONG"},
+            "version": "1.0",
+            "error_msg": None,
+            "msg": "Still alive."
+        }
+        return response
+
+    def making_get(self, answering_to: str) -> dict:
+        response = {
+            "from": self.name,
+            "to": answering_to,
+            "cmd": "GET",
+            "payload" : {
+                "data": self.data,
+            },
+            "version": "1.0",
+            "error_msg": None,
+            "msg": "Data sent."
+        }
+        return response
+
+    def making_error(self, answering_to: str, cmd: str, error_msg: str) -> dict:
+        response = {
+            "from": self.name,
+            "to" : answering_to,
+            "cmd": cmd,
+            "error": error_msg,
+            "version": "1.0",
+            "payload": {},
+            "msg": "Error incontered."
+        }
+        return response
+    
+    def making_save(self, answering_to: str) -> dict:
+        response = {
+            "from": self.name,
+            "to" : answering_to,
+            "cmd": "SAVE",
+            "error_msg": None,
+            "version": "1.0",
+            "payload": {},
+            "msg": "Saving path changed."
+        }
+        return response
 
     def stop(self) -> None:
         """
@@ -236,8 +304,8 @@ class ServerLHC(threading.Thread):
         socket.connect(self.address_for_client)
 
         try:
-            # try to send '__STOP__' to the server
-            socket.send_string("__STOP__")
+            # try to send 'STOP' to the server
+            socket.send_string("STOP")
             socket.recv_string()  # response is mandatory in REP
         except Exception as e:
             print(f"[Server {self.name}] Stop error:", e)
@@ -254,7 +322,7 @@ if __name__ == "__main__":
     address = f"tcp://*:1234"
     data = {"hello": "world", "positions": [42.], "unit": "bar"}
 
-    server = ServerLHC(address=address, freedom=1, device="__GAS__", data=data, name="gas")
+    server = ServerLHC(address=address, freedom=1, device="GAS", data=data, name="gas")
     server.start()
 
     try:
