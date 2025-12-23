@@ -1,5 +1,5 @@
 
-PROTOCOL_VERSION = "1.0"
+PROTOCOL_VERSION = "1.1"
 
 CMD_INFO = "INFO"
 CMD_PING = "PING"
@@ -65,4 +65,47 @@ def make_info_reply(sender: str, target: str, *, device, freedom, name, capabili
             "capabilities": capabilities,
         },
         msg="Informations transmitted."
+    )
+
+def make_get_request(sender: str, target: str):
+    return make_message(
+        cmd=CMD_GET,
+        sender=sender,
+        target=target,
+        msg="Get values."
+    )
+
+def make_get_reply(sender: str, target: str, *, data: dict):
+    return make_message(
+        cmd=CMD_GET,
+        sender=sender,
+        target=target,
+        payload={"data": data},
+        msg="Data sent."
+    )
+
+def make_save_request(sender: str, target: str, *, path: str):
+    return make_message(
+        cmd=CMD_SAVE,
+        sender=sender,
+        target=target,
+        payload={"path": path},
+        msg="Save path request."
+    )
+
+def make_save_reply(sender: str, target: str):
+    return make_message(
+        cmd=CMD_SAVE,
+        sender=sender,
+        target=target,
+        msg="Saving path changed."
+    )
+
+def make_error(sender: str, target: str, *, cmd: str, error_msg: str):
+    return make_message(
+        cmd=cmd,
+        sender=sender,
+        target=target,
+        error_msg=error_msg,
+        msg="Error encountered."
     )

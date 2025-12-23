@@ -9,7 +9,8 @@ from PyQt6.QtCore import pyqtSignal
 # project
 from server_lhc.protocol import (
     CMD_INFO, CMD_PING, CMD_GET, CMD_SAVE, CMD_STOP,
-    make_info_reply, make_pong, make_message
+    make_info_reply, make_pong,
+    make_get_reply, make_save_reply, make_error
 )
 
 class ServerLHC(threading.Thread):
@@ -180,7 +181,7 @@ class ServerLHC(threading.Thread):
                     print(f"[Server {self.name}] Received: '{cmd}' from '{target}'")
                     
                     # stop the thread on message 'STOP'
-                    if cmd == "STOP":
+                    if cmd == CMD_STOP:
                         self.socket.send_string("stopping...")
                         break                                       # interrupt the loop
                     
@@ -196,27 +197,47 @@ class ServerLHC(threading.Thread):
                         self.socket.send_json(response)
 
                     # send the dictionnary on message 'GET'
-                    elif cmd == "GET":
-                        response = self.making_get(target)
-                        self.socket.send_json(response)
+                    elif cmd == CMD_GET:
+                        self.socket.send_json(
+                            make_get_reply(
+                                sender=self.name,
+                                target=target,
+                                data=self.data
+                            )
+                        )
                     
                     elif cmd == CMD_PING:
                         self.socket.send_json(make_pong(self.name, target))
                     
-                    elif cmd == "SAVE":
-                        payload = message.get("payload")
-                        path = payload.get("path")
+                    elif cmd == CMD_SAVE:
+                        path = message.get("payload", {}).get("path")
                         if not path:
-                            response = self.making_error(target, cmd, "Error: missing path")
-                            self.socket.send_json(response)
+                            self.socket.send_json(
+                                make_error(
+                                    sender=self.name,
+                                    target=target,
+                                    cmd=CMD_SAVE,
+                                    error_msg="Missing path"
+                                )
+                            )
                         else:
                             self.emit_saving_path_changed(path)
-                            response = self.making_save(target)
-                            self.socket.send_json(response)
+                            self.socket.send_json(
+                                make_save_reply(
+                                    sender=self.name,
+                                    target=target
+                                )
+                            )
                     
                     else :
-                        response = self.making_error(target, cmd, "Error: unable to understand the demande.")
-                        self.socket.send_string(response)
+                        self.socket.send_json(
+                            make_error(
+                                sender=self.name,
+                                target=target,
+                                cmd=cmd,
+                                error_msg="Unknown command"
+                            )
+                        )
 
                 else:
                     time.sleep(0.01) # wait 10 ms
@@ -232,43 +253,43 @@ class ServerLHC(threading.Thread):
     def emit_saving_path_changed(self, path):
         self.saving_path_changed.emit(path)
 
-    def making_get(self, answering_to: str) -> dict:
-        response = {
-            "from": self.name,
-            "to": answering_to,
-            "cmd": "GET",
-            "payload" : {
-                "data": self.data,
-            },
-            "version": "1.0",
-            "error_msg": None,
-            "msg": "Data sent."
-        }
-        return response
+    # def making_get(self, answering_to: str) -> dict:
+    #     response = {
+    #         "from": self.name,
+    #         "to": answering_to,
+    #         "cmd": "GET",
+    #         "payload" : {
+    #             "data": self.data,
+    #         },
+    #         "version": "1.0",
+    #         "error_msg": None,
+    #         "msg": "Data sent."
+    #     }
+    #     return response
 
-    def making_error(self, answering_to: str, cmd: str, error_msg: str) -> dict:
-        response = {
-            "from": self.name,
-            "to" : answering_to,
-            "cmd": cmd,
-            "error": error_msg,
-            "version": "1.0",
-            "payload": {},
-            "msg": "Error incontered."
-        }
-        return response
+    # def making_error(self, answering_to: str, cmd: str, error_msg: str) -> dict:
+    #     response = {
+    #         "from": self.name,
+    #         "to" : answering_to,
+    #         "cmd": cmd,
+    #         "error": error_msg,
+    #         "version": "1.0",
+    #         "payload": {},
+    #         "msg": "Error incontered."
+    #     }
+    #     return response
     
-    def making_save(self, answering_to: str) -> dict:
-        response = {
-            "from": self.name,
-            "to" : answering_to,
-            "cmd": "SAVE",
-            "error_msg": None,
-            "version": "1.0",
-            "payload": {},
-            "msg": "Saving path changed."
-        }
-        return response
+    # def making_save(self, answering_to: str) -> dict:
+    #     response = {
+    #         "from": self.name,
+    #         "to" : answering_to,
+    #         "cmd": "SAVE",
+    #         "error_msg": None,
+    #         "version": "1.0",
+    #         "payload": {},
+    #         "msg": "Saving path changed."
+    #     }
+    #     return response
 
     def stop(self) -> None:
         """
