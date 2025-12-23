@@ -178,7 +178,7 @@ class ServerLHC(threading.Thread):
                     message = self.socket.recv_json()
                     cmd = message.get("cmd")
                     target = message.get("from")
-                    print(f"[Server {self.name}] Received: '{cmd}' from '{target}'")
+                    print(f"[Server {self.name}] Received: '{cmd}' from '{target}'.")
                     
                     # stop the thread on message 'STOP'
                     if cmd == CMD_STOP:
@@ -252,44 +252,6 @@ class ServerLHC(threading.Thread):
 
     def emit_saving_path_changed(self, path):
         self.saving_path_changed.emit(path)
-
-    # def making_get(self, answering_to: str) -> dict:
-    #     response = {
-    #         "from": self.name,
-    #         "to": answering_to,
-    #         "cmd": "GET",
-    #         "payload" : {
-    #             "data": self.data,
-    #         },
-    #         "version": "1.0",
-    #         "error_msg": None,
-    #         "msg": "Data sent."
-    #     }
-    #     return response
-
-    # def making_error(self, answering_to: str, cmd: str, error_msg: str) -> dict:
-    #     response = {
-    #         "from": self.name,
-    #         "to" : answering_to,
-    #         "cmd": cmd,
-    #         "error": error_msg,
-    #         "version": "1.0",
-    #         "payload": {},
-    #         "msg": "Error incontered."
-    #     }
-    #     return response
-    
-    # def making_save(self, answering_to: str) -> dict:
-    #     response = {
-    #         "from": self.name,
-    #         "to" : answering_to,
-    #         "cmd": "SAVE",
-    #         "error_msg": None,
-    #         "version": "1.0",
-    #         "payload": {},
-    #         "msg": "Saving path changed."
-    #     }
-    #     return response
 
     def stop(self) -> None:
         """
