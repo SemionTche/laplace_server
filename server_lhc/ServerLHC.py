@@ -8,7 +8,7 @@ import time
 from server_lhc.protocol import (
     CMD_INFO, CMD_PING, CMD_GET, CMD_SAVE, CMD_STOP, AVAILABLE_DEVICES,
     make_info_reply, make_pong,
-    make_get_reply, make_save_reply, make_error
+    make_get_reply, make_save_reply, make_error, make_stop_reply, make_stop
 )
 
 class ServerLHC(threading.Thread):
@@ -179,8 +179,13 @@ class ServerLHC(threading.Thread):
                     
                     # stop the thread on message 'STOP'
                     if cmd == CMD_STOP:
-                        self.socket.send_string("stopping...")
-                        break                                       # interrupt the loop
+                        self.socket.send_json(
+                            make_stop_reply(
+                                sender=self.name,
+                                target=target
+                            )
+                        )
+                        break             # interrupt the loop
                     
                     elif cmd == CMD_INFO:
                         response = make_info_reply(
@@ -269,8 +274,13 @@ class ServerLHC(threading.Thread):
 
         try:
             # try to send 'STOP' to the server
-            socket.send_string("STOP")
-            socket.recv_string()  # response is mandatory in REP
+            socket.send_json(
+                make_stop(
+                    sender="local",
+                    target=self.name
+                )
+            )
+            socket.recv_json()  # response is mandatory in REP
         except Exception as e:
             print(f"[Server {self.name}] Stop error:", e)
 

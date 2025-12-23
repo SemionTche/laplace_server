@@ -115,3 +115,19 @@ def make_error(sender: str, target: str, *, cmd: str, error_msg: str):
         error_msg=error_msg,
         msg="Error encountered."
     )
+
+def make_stop(sender: str, target: str):
+    return make_message(
+        cmd=CMD_STOP,
+        sender=sender,
+        target=target,
+        msg="Shutdown request."
+    )
+
+def make_stop_reply(sender: str, target: str):
+    return make_message(
+        cmd=CMD_STOP,
+        sender=sender,
+        target=target,
+        msg="Server stopping."
+    )
