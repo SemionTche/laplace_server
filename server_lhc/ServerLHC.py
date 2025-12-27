@@ -6,8 +6,8 @@ import time
 
 # project
 from server_lhc.protocol import (
-    CMD_INFO, CMD_PING, CMD_GET, CMD_SAVE, CMD_STOP, AVAILABLE_DEVICES,
-    make_info_reply, make_pong,
+    CMD_INFO, CMD_PING, CMD_GET, CMD_SET, CMD_SAVE, CMD_STOP, AVAILABLE_DEVICES,
+    make_info_reply, make_pong, make_set_reply,
     make_get_reply, make_save_reply, make_error, make_stop_reply, make_stop
 )
 
@@ -76,6 +76,7 @@ class ServerLHC(threading.Thread):
         self._running.set()
 
         self.on_saving_path_changed = None # callable to emit a signal when save message is received
+        self.on_position_changed = None
 
 
     def get_my_ip(self) -> str:
@@ -231,6 +232,26 @@ class ServerLHC(threading.Thread):
                                 )
                             )
                     
+                    elif cmd == CMD_SET:
+                        positions = message.get("payload", {}).get("positions")
+                        if not positions:
+                            self.socket.send_json(
+                                make_error(
+                                    sender=self.name,
+                                    target=target,
+                                    cmd=CMD_SET,
+                                    error_msg="Missing positions"
+                                )
+                            )
+                        else:
+                            self.emit_position_changed(positions)
+                            self.socket.send_json(
+                                make_set_reply(
+                                    sender=self.name,
+                                    target=target,
+                                )
+                            )
+                    
                     else :
                         self.socket.send_json(
                             make_error(
@@ -255,6 +276,10 @@ class ServerLHC(threading.Thread):
     def emit_saving_path_changed(self, path):
         if self.on_saving_path_changed:
             self.on_saving_path_changed(path)
+    
+    def emit_position_changed(self, positions):
+        if self.on_position_changed:
+            self.on_position_changed(positions)
 
     def stop(self) -> None:
         """
