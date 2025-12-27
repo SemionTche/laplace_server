@@ -5,6 +5,7 @@ CMD_INFO = "INFO"
 CMD_PING = "PING"
 CMD_GET  = "GET"
 CMD_SAVE = "SAVE"
+CMD_SET = "SET"
 CMD_STOP = "STOP"
 CMD_ERROR = "ERROR"
 
@@ -130,4 +131,23 @@ def make_stop_reply(sender: str, target: str):
         sender=sender,
         target=target,
         msg="Server stopping."
+    )
+
+def make_set_request(sender: str, target: str, *, positions: list):
+    return make_message(
+        cmd=CMD_SET,
+        sender=sender,
+        target=target,
+        payload={
+            "positions": positions,
+        },
+        msg="Set request."
+    )
+
+def make_set_reply(sender: str, target: str):
+    return make_message(
+        cmd=CMD_SET,
+        sender=sender,
+        target=target,
+        msg="Positions updated."
     )
