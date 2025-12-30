@@ -75,7 +75,9 @@ class ServerLHC(threading.Thread):
         self._running = threading.Event()
         self._running.set()
 
-        self.on_saving_path_changed = None # callable to emit a signal when save message is received
+        # callable to emit a signal when save message is received
+        # need to be set by the user when deploying the server
+        self.on_saving_path_changed = None
         self.on_position_changed = None
 
 
@@ -280,6 +282,14 @@ class ServerLHC(threading.Thread):
     def emit_position_changed(self, positions):
         if self.on_position_changed:
             self.on_position_changed(positions)
+    
+    def set_on_saving_path_changed(self, func: callable) -> None:
+        '''Set the function to use when a path is received.'''
+        self.on_saving_path_changed = func
+    
+    def set_on_position_changed(self, func: callable) -> None:
+        '''Set the function to use when a position is received.'''
+        self.on_position_changed = func
 
     def stop(self) -> None:
         """
