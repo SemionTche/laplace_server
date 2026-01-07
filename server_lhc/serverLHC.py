@@ -69,7 +69,7 @@ class ServerLHC(threading.Thread):
 
         self._server_ip = self.get_my_ip()
 
-        self.capabilities = ["INFO", "PING", "GET", "SAVE", "SET", "STOP"]
+        self.capabilities = [CMD_INFO, CMD_PING, CMD_GET, CMD_SET, CMD_SAVE, CMD_STOP]
 
         # creating the Thread of the server
         self._running = threading.Event()
