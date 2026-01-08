@@ -79,6 +79,7 @@ class ServerLHC(threading.Thread):
         # need to be set by the user when deploying the server
         self.on_saving_path_changed = None
         self.on_position_changed = None
+        self.on_get = None
 
 
     def get_my_ip(self) -> str:
@@ -210,6 +211,7 @@ class ServerLHC(threading.Thread):
                                 data=self.data
                             )
                         )
+                        self.emi_get()
                     
                     elif cmd == CMD_PING:
                         self.socket.send_json(make_pong(self.name, target))
@@ -283,6 +285,10 @@ class ServerLHC(threading.Thread):
         if self.on_position_changed:
             self.on_position_changed(positions)
     
+    def emi_get(self):
+        if self.on_get:
+            self.on_get()
+
     def set_on_saving_path_changed(self, func: callable) -> None:
         '''Set the function to use when a path is received.'''
         self.on_saving_path_changed = func
@@ -290,6 +296,10 @@ class ServerLHC(threading.Thread):
     def set_on_position_changed(self, func: callable) -> None:
         '''Set the function to use when a position is received.'''
         self.on_position_changed = func
+    
+    def set_on_get(self, func: callable) -> None:
+        '''Set the function to use when a get is received.'''
+        self.on_get = func
 
     def stop(self) -> None:
         """

@@ -1,9 +1,10 @@
-# serverController.py
+# libraries
 from PyQt6.QtCore import QObject, pyqtSignal
 
 class ServerController(QObject):
     saving_path_changed = pyqtSignal(str)
     position_changed = pyqtSignal(list)
+    get_received = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -13,3 +14,6 @@ class ServerController(QObject):
     
     def on_position_changed(self, positions: list):
         self.position_changed.emit(positions)
+    
+    def on_get(self):
+        self.get_received.emit()
