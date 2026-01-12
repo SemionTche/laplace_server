@@ -6,8 +6,9 @@ import time
 
 # project
 from server_lhc.protocol import (
-    CMD_INFO, CMD_PING, CMD_GET, CMD_SET, CMD_SAVE, CMD_STOP, AVAILABLE_DEVICES,
-    make_info_reply, make_pong, make_set_reply,
+    CMD_INFO, CMD_PING, CMD_GET, CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT, 
+    AVAILABLE_DEVICES,
+    make_info_reply, make_pong, make_set_reply, make_opt_reply,
     make_get_reply, make_save_reply, make_error, make_stop_reply, make_stop
 )
 
@@ -69,7 +70,7 @@ class ServerLHC(threading.Thread):
 
         self._server_ip = self.get_my_ip()
 
-        self.capabilities = [CMD_INFO, CMD_PING, CMD_GET, CMD_SET, CMD_SAVE, CMD_STOP]
+        self.capabilities = [CMD_INFO, CMD_PING, CMD_GET, CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT]
 
         # creating the Thread of the server
         self._running = threading.Event()
@@ -80,6 +81,7 @@ class ServerLHC(threading.Thread):
         self.on_saving_path_changed = None
         self.on_position_changed = None
         self.on_get = None
+        self.on_opt = None
 
 
     def get_my_ip(self) -> str:
@@ -161,12 +163,6 @@ class ServerLHC(threading.Thread):
         '''
         Function used while the server is running.
         The server is waiting to receive messages from clients.
-        keywords are:
-            'GET': transmit the dictionary
-            'STOP': stop the server
-            'INFO': transmit the server properties
-            'PING': answer 'PONG'
-            'SAVE':
         '''
         print(f"[Server {self.name}] Running on {self.address}")
         print(f"[Server {self.name}] To connect with, use {self.address_for_client}")
@@ -211,7 +207,7 @@ class ServerLHC(threading.Thread):
                                 data=self.data
                             )
                         )
-                        self.emi_get()
+                        self.emit_get()
                     
                     elif cmd == CMD_PING:
                         self.socket.send_json(make_pong(self.name, target))
@@ -256,6 +252,26 @@ class ServerLHC(threading.Thread):
                                 )
                             )
                     
+                    elif cmd == CMD_OPT:
+                        data = message.get("payload", {}).get("data")
+                        if not data:
+                            self.socket.send_json(
+                                make_error(
+                                    sender=self.name,
+                                    target=target,
+                                    cmd=CMD_OPT,
+                                    error_msg="Missing data"
+                                )
+                            )
+                        else:
+                            self.emit_opt_changed(data)
+                            self.socket.send_json(
+                                make_opt_reply(
+                                    sender=self.name,
+                                    target=target
+                                )
+                            )
+                    
                     else :
                         self.socket.send_json(
                             make_error(
@@ -277,6 +293,7 @@ class ServerLHC(threading.Thread):
         self.context.term()  # close the context
         print(f"[Server {self.name}] Stopped")
 
+    ### emit
     def emit_saving_path_changed(self, path):
         if self.on_saving_path_changed:
             self.on_saving_path_changed(path)
@@ -285,10 +302,15 @@ class ServerLHC(threading.Thread):
         if self.on_position_changed:
             self.on_position_changed(positions)
     
-    def emi_get(self):
+    def emit_opt_changed(self, data):
+        if self.on_opt:
+            self.on_opt(data)
+    
+    def emit_get(self):
         if self.on_get:
             self.on_get()
 
+    ### set
     def set_on_saving_path_changed(self, func: callable) -> None:
         '''Set the function to use when a path is received.'''
         self.on_saving_path_changed = func
@@ -300,7 +322,12 @@ class ServerLHC(threading.Thread):
     def set_on_get(self, func: callable) -> None:
         '''Set the function to use when a get is received.'''
         self.on_get = func
+    
+    def set_on_opt(self, func: callable) -> None:
+        '''Set the function to use when a cmd opt is received.'''
+        self.on_opt = func
 
+    ### stop
     def stop(self) -> None:
         """
         Proper way to stop the thread where the server is running.

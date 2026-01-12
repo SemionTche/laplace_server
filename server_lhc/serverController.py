@@ -5,6 +5,7 @@ class ServerController(QObject):
     saving_path_changed = pyqtSignal(str)
     position_changed = pyqtSignal(list)
     get_received = pyqtSignal()
+    opt_received = pyqtSignal(dict)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -17,3 +18,6 @@ class ServerController(QObject):
     
     def on_get(self):
         self.get_received.emit()
+    
+    def on_opt(self, data):
+        self.opt_received.emit(data)

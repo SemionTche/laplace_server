@@ -1,5 +1,5 @@
 
-PROTOCOL_VERSION = "1.2"
+PROTOCOL_VERSION = "1.3"
 
 CMD_INFO = "INFO"
 CMD_PING = "PING"
@@ -8,6 +8,7 @@ CMD_SAVE = "SAVE"
 CMD_SET = "SET"
 CMD_STOP = "STOP"
 CMD_ERROR = "ERROR"
+CMD_OPT = "INFO_OPT"
 
 DEVICE_MOTOR = "MOTOR"
 DEVICE_CAMERA = "CAMERA"
@@ -150,4 +151,21 @@ def make_set_reply(sender: str, target: str):
         sender=sender,
         target=target,
         msg="Positions updated."
+    )
+
+def make_opt_update(sender: str, target: str, *, data: dict):
+    return make_message(
+        cmd=CMD_OPT,
+        sender=sender,
+        target=target,
+        payload={"data": data},
+        msg="Opt informations."
+    )
+
+def make_opt_reply(sender: str, target: str):
+    return make_message(
+        cmd=CMD_OPT,
+        sender=sender,
+        target=target,
+        msg="Updating opt."
     )
