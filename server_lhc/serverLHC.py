@@ -57,7 +57,8 @@ class ServerLHC(threading.Thread):
         self.freedom = freedom
         self.device = device
         self.name = name
-        
+        self.reset_data = False
+
         # format
         self.device_format()
         self.freedom_format()
@@ -144,6 +145,7 @@ class ServerLHC(threading.Thread):
         '''
         self.dictionary_format(new_data)
         self._data = new_data
+        self.reset_data = False
 
 
     def dictionary_format(self, data):
@@ -208,6 +210,7 @@ class ServerLHC(threading.Thread):
                             )
                         )
                         self.emit_get()
+                        self.reset_data = True
                     
                     elif cmd == CMD_PING:
                         self.socket.send_json(make_pong(self.name, target))
