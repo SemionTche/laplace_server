@@ -15,12 +15,13 @@ from server_lhc.protocol import (
 class ServerLHC(threading.Thread):
     '''
     '''
-    def __init__(self, 
+    def __init__(self,
+                 name: str, 
                  address: str,
                  freedom: int,
                  device: str,
                  data: dict,
-                 name: str = "Unknown"):
+                 empty_data_after_get: bool = False):
         '''
         Visu server made to transmit a dictionnay 'data' to any client sending '__GET__'
         to the server.
@@ -57,7 +58,7 @@ class ServerLHC(threading.Thread):
         self.freedom = freedom
         self.device = device
         self.name = name
-        self.reset_data = False
+        # self.reset_data = False
 
         # format
         self.device_format()
@@ -72,6 +73,8 @@ class ServerLHC(threading.Thread):
         self._server_ip = self.get_my_ip()
 
         self.capabilities = [CMD_INFO, CMD_PING, CMD_GET, CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT]
+
+        self.empty_data_after_get = empty_data_after_get
 
         # creating the Thread of the server
         self._running = threading.Event()
@@ -145,7 +148,7 @@ class ServerLHC(threading.Thread):
         '''
         self.dictionary_format(new_data)
         self._data = new_data
-        self.reset_data = False
+        # self.reset_data = False
 
 
     def dictionary_format(self, data):
@@ -160,6 +163,8 @@ class ServerLHC(threading.Thread):
         if not isinstance(self.freedom, int):
             raise ValueError(f"Error: 'freedom' argument must be an interger not: {type(self.freedom)}")
 
+    def empty_data(self) -> None:
+        self.set_data(new_data={})
 
     def run(self) -> None:
         '''
@@ -210,7 +215,9 @@ class ServerLHC(threading.Thread):
                             )
                         )
                         self.emit_get()
-                        self.reset_data = True
+                        if self.empty_data_after_get:
+                            self.empty_data()
+                            # self.reset_data = True
                     
                     elif cmd == CMD_PING:
                         self.socket.send_json(make_pong(self.name, target))
