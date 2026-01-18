@@ -4,6 +4,10 @@ import socket as sock  # rename to avoid conflict with zmq socket
 import threading
 import time
 
+import logging
+logger = logging.getLogger("laplace_server")
+
+
 # project
 from server_lhc.protocol import (
     CMD_INFO, CMD_PING, CMD_GET, CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT, 
@@ -171,6 +175,8 @@ class ServerLHC(threading.Thread):
         Function used while the server is running.
         The server is waiting to receive messages from clients.
         '''
+        logger.info("test info")
+        logger.debug("test debug")
         print(f"[Server {self.name}] Running on {self.address}")
         print(f"[Server {self.name}] To connect with, use {self.address_for_client}")
 
