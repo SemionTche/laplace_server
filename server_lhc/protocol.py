@@ -1,5 +1,7 @@
+import logging
+log = logging.getLogger("laplace_server.protocol")
 
-PROTOCOL_VERSION = "1.3"
+PROTOCOL_VERSION = "1.4"
 
 CMD_INFO = "INFO"
 CMD_PING = "PING"
@@ -15,6 +17,23 @@ DEVICE_CAMERA = "CAMERA"
 DEVICE_GAS = "GAS"
 DEVICE_OPT = "OPT"
 AVAILABLE_DEVICES = [DEVICE_MOTOR, DEVICE_CAMERA, DEVICE_GAS, DEVICE_OPT]
+
+
+def format_device(device: str) -> None:
+    '''Check if the device argument is among the 'AVAILABLE_DEVICES'.'''
+    if device not in AVAILABLE_DEVICES:
+        log.error(f"Error: 'device' argument provided: '{device}' is invalid.\n" + 
+                    f"The device must be choosen among the available devices: {AVAILABLE_DEVICES}.")
+        raise ValueError(f"Error: 'device' argument provided: '{device}' is invalid.\n" + 
+                    f"The device must be choosen among the available devices: {AVAILABLE_DEVICES}.")
+
+
+def format_freedom(freedom: int) -> None:
+    '''Check if the freedom argument is an integer.'''
+    if not isinstance(freedom, int):
+        log.error(f"Error: 'freedom' argument must be an '{int.__name__}' not: '{type(freedom).__name__}'.")
+        raise ValueError(f"Error: 'freedom' argument must be an '{int.__name__}' not: '{type(freedom).__name__}'.")
+
 
 def make_message( *,
                  cmd: str,

@@ -5,29 +5,26 @@ import threading
 import time
 
 import logging
-logger = logging.getLogger("laplace_server")
+log = logging.getLogger("laplace_server")
 
 
 # project
 from server_lhc.protocol import (
+    # available commands
     CMD_INFO, CMD_PING, CMD_GET, CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT, 
-    AVAILABLE_DEVICES,
+    
+    # available messages
     make_info_reply, make_pong, make_set_reply, make_opt_reply,
-    make_get_reply, make_save_reply, make_error, make_stop_reply, make_stop
+    make_get_reply, make_save_reply, make_error, make_stop_reply, make_stop,
+    
+    # format checkers
+    format_device, format_freedom
 )
+
 
 class ServerLHC(threading.Thread):
     '''
-    '''
-    def __init__(self,
-                 name: str, 
-                 address: str,
-                 freedom: int,
-                 device: str,
-                 data: dict,
-                 empty_data_after_get: bool = False):
-        '''
-        Visu server made to transmit a dictionnay 'data' to any client sending '__GET__'
+    Visu server made to transmit a dictionnay 'data' to any client sending '__GET__'
         to the server.
 
         To start the server, create an instance of the server and use the 'start' method
@@ -40,7 +37,16 @@ class ServerLHC(threading.Thread):
 
         To close the server, use the 'stop' method:
             serv.stop()
+    '''
 
+    def __init__(self,
+                 name: str, 
+                 address: str,
+                 freedom: int,
+                 device: str,
+                 data: dict,  # a enlever
+                 empty_data_after_get: bool = False):
+        '''
         Args:
             address: (str)
                 the server adress. format 'tcp://<listen to>:<port>'
@@ -58,15 +64,15 @@ class ServerLHC(threading.Thread):
         super().__init__() # heritage from Thread
         
         self._address = address
-        self._data = data or {}
+        self._data = data
         self.freedom = freedom
         self.device = device
         self.name = name
-        # self.reset_data = False
+        self.empty_data_after_get = empty_data_after_get
 
         # format
-        self.device_format()
-        self.freedom_format()
+        format_device(self.device)
+        format_freedom(self.freedom)
         self.set_data(data)
 
         # server context
@@ -74,13 +80,11 @@ class ServerLHC(threading.Thread):
         self.socket = self.context.socket(zmq.REP)
         self.socket.bind(self._address)
 
-        self._server_ip = self.get_my_ip()
+        self._server_ip = self.get_ip()
 
         self.capabilities = [CMD_INFO, CMD_PING, CMD_GET, CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT]
 
-        self.empty_data_after_get = empty_data_after_get
-
-        # creating the Thread of the server
+        # creating the server Thread
         self._running = threading.Event()
         self._running.set()
 
@@ -92,91 +96,75 @@ class ServerLHC(threading.Thread):
         self.on_opt = None
 
 
-    def get_my_ip(self) -> str:
-        '''
-        Helper returning the IPV4 address of the process running.
-        '''
+    def get_ip(self) -> str:
+        '''Helper returning the IPV4 address of the running process.'''
         s = sock.socket(sock.AF_INET, sock.SOCK_DGRAM)
         try:
-            # No traffic is actually sent
-            s.connect(("8.8.8.8", 80))
+            s.connect(("8.8.8.8", 80))  # No traffic is actually sent
             return s.getsockname()[0]
         finally:
             s.close()
+    
+    
+    def set_data(self, new_data: dict) -> None:
+        '''Set a new dictionary to transmit.'''
+        self._data = new_data
+        log.debug("Server new dictionary setted.")
+
+    
+    def empty_data(self) -> None:
+        '''Reset the server dictionary.'''
+        self.set_data(new_data={})
+        log.debug("Server dictionary emptied.")
+
 
     @property
-    def address(self) -> str:
-        '''
-        Helper to avoid 'address' direct modification.
-        '''
-        return self._address
-    
-    @property
     def data(self) -> dict:
-        '''
-        Helper to avoid 'data' direct modification.
-        To modify 'data', use 'set_data'.
-        '''
+        '''Helper to avoid 'data' direct modification.
+            To modify 'data', use 'set_data'.'''
         return self._data
     
     @property
+    def address(self) -> str:
+        '''Helper to avoid 'address' direct modification. 
+           Format 'protocol'://'listen to':'port'.'''
+        return self._address
+    
+    @property
     def server_ip(self) -> str:
-        '''
-        Helper to avoid 'server_ip' direct modification.
-        '''
+        '''Helper to avoid 'server_ip' direct modification.'''
         return self._server_ip
     
     @property
+    def server_port(self):
+        _, rest = self.address.split("://")
+        _, port = rest.split(":")
+        return port
+    
+    @property
     def running(self):
-        '''
-        Helper to avoid 'running' direct modification.
-        '''
+        '''Helper to avoid 'running' direct modifications.'''
         return self._running
 
     @property
     def address_for_client(self):
-        '''
-        Helper that return the 'address' for the client.
-        '<protocol>://<IP server>:<port>'
-        '''
-        proto, rest = self.address.split("://")
+        '''Helper that return the 'address' for the client.
+           'protocol'://'IP server':'port'.'''
+        protocol, rest = self.address.split("://")
         _, port = rest.split(":")
 
-        address_for_client = f"{proto}://{self.server_ip}:{port}"
+        address_for_client = f"{protocol}://{self.server_ip}:{port}"
 
         return address_for_client
 
-    def set_data(self, new_data: dict) -> None:
-        '''
-        Set a new dictionary to transmit.
-        '''
-        self.dictionary_format(new_data)
-        self._data = new_data
-        # self.reset_data = False
-
-
-    def dictionary_format(self, data):
-        required_keys = []
-        pass
-
-    def device_format(self) -> None:
-        if self.device not in AVAILABLE_DEVICES:
-            raise ValueError(f"Error: 'device' argument must be choosen among the availabel devices: {AVAILABLE_DEVICES}")
-
-    def freedom_format(self) -> None:
-        if not isinstance(self.freedom, int):
-            raise ValueError(f"Error: 'freedom' argument must be an interger not: {type(self.freedom)}")
-
-    def empty_data(self) -> None:
-        self.set_data(new_data={})
 
     def run(self) -> None:
         '''
         Function used while the server is running.
         The server is waiting to receive messages from clients.
         '''
-        logger.info("test info")
-        logger.debug("test debug")
+        log.info("test info")
+        log.debug("test debug")
         print(f"[Server {self.name}] Running on {self.address}")
         print(f"[Server {self.name}] To connect with, use {self.address_for_client}")
 
@@ -326,7 +314,7 @@ class ServerLHC(threading.Thread):
         if self.on_get:
             self.on_get()
 
-    ### set
+    ### setters
     def set_on_saving_path_changed(self, func: callable) -> None:
         '''Set the function to use when a path is received.'''
         self.on_saving_path_changed = func
@@ -381,7 +369,7 @@ class ServerLHC(threading.Thread):
 
 if __name__ == "__main__":
 
-    address = f"tcp://*:1234"
+    address = "tcp://*:1234"
     data = {"hello": "world", "positions": [42.], "unit": "bar"}
 
     server = ServerLHC(address=address, freedom=1, device="GAS", data=data, name="gas")
