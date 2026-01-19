@@ -1,8 +1,11 @@
+# libraries
 import logging
-log = logging.getLogger("laplace_server.protocol")
+log = logging.getLogger("laplace.server.protocol")
 
-PROTOCOL_VERSION = "1.4"
+# protocol version
+PROTOCOL_VERSION = "1.5"
 
+# commands
 CMD_INFO = "INFO"
 CMD_PING = "PING"
 CMD_GET  = "GET"
@@ -12,30 +15,16 @@ CMD_STOP = "STOP"
 CMD_ERROR = "ERROR"
 CMD_OPT = "INFO_OPT"
 
+# devices
 DEVICE_MOTOR = "MOTOR"
 DEVICE_CAMERA = "CAMERA"
 DEVICE_GAS = "GAS"
 DEVICE_OPT = "OPT"
+
 AVAILABLE_DEVICES = [DEVICE_MOTOR, DEVICE_CAMERA, DEVICE_GAS, DEVICE_OPT]
 
 
-def format_device(device: str) -> None:
-    '''Check if the device argument is among the 'AVAILABLE_DEVICES'.'''
-    if device not in AVAILABLE_DEVICES:
-        log.error(f"Error: 'device' argument provided: '{device}' is invalid.\n" + 
-                    f"The device must be choosen among the available devices: {AVAILABLE_DEVICES}.")
-        raise ValueError(f"Error: 'device' argument provided: '{device}' is invalid.\n" + 
-                    f"The device must be choosen among the available devices: {AVAILABLE_DEVICES}.")
-
-
-def format_freedom(freedom: int) -> None:
-    '''Check if the freedom argument is an integer.'''
-    if not isinstance(freedom, int):
-        log.error(f"Error: 'freedom' argument must be an '{int.__name__}' not: '{type(freedom).__name__}'.")
-        raise ValueError(f"Error: 'freedom' argument must be an '{int.__name__}' not: '{type(freedom).__name__}'.")
-
-
-def make_message( *,
+def make_message(*,
                  cmd: str,
                  sender: str,
                  target: str,
