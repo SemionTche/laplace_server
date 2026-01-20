@@ -1,10 +1,10 @@
 # libraries
 import logging
-log = logging.getLogger("laplace.server.format")
-
 
 # project
-from server_lhc.protocol import AVAILABLE_DEVICES
+from server_lhc.protocol import AVAILABLE_DEVICES, LOGGER_NAME
+
+log = logging.getLogger(LOGGER_NAME)
 
 
 # checking formats

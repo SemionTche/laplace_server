@@ -5,9 +5,7 @@ import socket as sock  # rename to avoid conflict with zmq socket
 import threading
 import time
 import json
-
 import logging
-log = logging.getLogger("laplace.server")
 
 
 # project
@@ -21,12 +19,17 @@ from server_lhc.protocol import (
     make_error, make_stop_reply, make_stop,
     
     # available devices
-    AVAILABLE_DEVICES
+    AVAILABLE_DEVICES,
+
+    # the nme of the logger instance
+    LOGGER_NAME
 )
 from server_lhc.check_format import(
     # format checkers
     format_device, format_freedom, format_address, format_message
 )
+
+log = logging.getLogger(LOGGER_NAME)
 
 
 class ServerLHC(threading.Thread):
@@ -160,7 +163,7 @@ class ServerLHC(threading.Thread):
     def set_data(self, new_data: dict) -> None:
         '''Set a new dictionary.'''
         self._data = new_data
-        log.info(f"[Server {self.name}] Server new dictionary setted.")
+        log.debug(f"[Server {self.name}] Server new dictionary setted.")
         
         d = json.dumps(self.data, indent=4, sort_keys=True, default=str) # making a json
         log.debug(f"[Server {self.name}] Current dictionary:\n" + d )
@@ -169,7 +172,7 @@ class ServerLHC(threading.Thread):
     def empty_data(self) -> None:
         '''Reset the server dictionary.'''
         self.set_data(new_data={})
-        log.info("Server dictionary emptied.")
+        log.debug("Server dictionary emptied.")
 
 
     @property
