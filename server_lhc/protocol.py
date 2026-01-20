@@ -1,6 +1,7 @@
+# protocol version
+PROTOCOL_VERSION = "1.5"
 
-PROTOCOL_VERSION = "1.3"
-
+# commands
 CMD_INFO = "INFO"
 CMD_PING = "PING"
 CMD_GET  = "GET"
@@ -10,13 +11,18 @@ CMD_STOP = "STOP"
 CMD_ERROR = "ERROR"
 CMD_OPT = "INFO_OPT"
 
+# devices
 DEVICE_MOTOR = "MOTOR"
 DEVICE_CAMERA = "CAMERA"
 DEVICE_GAS = "GAS"
 DEVICE_OPT = "OPT"
+
 AVAILABLE_DEVICES = [DEVICE_MOTOR, DEVICE_CAMERA, DEVICE_GAS, DEVICE_OPT]
 
-def make_message( *,
+# logger name
+LOGGER_NAME = "laplace.server"
+
+def make_message(*,
                  cmd: str,
                  sender: str,
                  target: str,
