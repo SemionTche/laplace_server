@@ -1,67 +1,65 @@
+'''
+ZMQ-based server implementation for the LAPLACE-LHC project.
+
+This module defines the ServerLHC class, which runs a command-driven server
+in its own thread. The server listens for protocol-compliant messages,
+validates them, dispatches command handlers, and optionally triggers
+user-defined callbacks.
+
+The server is designed to remain independent from GUI frameworks
+(e.g. PyQt), while still allowing integration through callback-based
+controllers.
+'''
+
 # libraries
-from typing import Callable
-import zmq
+import json
+import logging
 import socket as sock  # rename to avoid conflict with zmq socket
 import threading
 import time
-import json
-import logging
+from typing import Callable
 
+import zmq
 
 # project
 from server_lhc.protocol import (
-    # available commands
-    CMD_INFO, CMD_PING, CMD_GET, CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT, 
-    
-    # available messages
+    CMD_INFO, CMD_PING, CMD_GET,
+    CMD_SET, CMD_SAVE, CMD_OPT, CMD_STOP, 
     make_error, make_stop,
-    
-    # available devices
     AVAILABLE_DEVICES,
-
-    # the name of the logger instance
     LOGGER_NAME
 )
 from server_lhc.validations import(
-    # format checkers
-    validate_device, validate_freedom, validate_address, 
-    validate_message
+    validate_device, validate_freedom, 
+    validate_address, validate_message
 )
-from server_lhc.handlers import(
-    handle_get, handle_info, handle_opt,
-    handle_ping, handle_save, handle_set, handle_stop
-)
+from server_lhc import handlers
+
 
 log = logging.getLogger(LOGGER_NAME)
 
 
 class ServerLHC(threading.Thread):
-    '''
+    f'''
     Server made for the LAPLACE-LHC project.
 
-    To start the server, create an instance of the server and use the 'start' 
-    method to assing its own thread:
-        serv = ServerLHC(name, ...)
-        serv.start()
+    The server runs in its own thread and communicates using the ZMQ REP/REQ
+    pattern.
 
-    To update the dictionary stored in the server, use 'set_data' method:
-        serv.set_data(new_data: dict)
-
-    To close the server, use the 'stop' method:
-        serv.stop()
-    
-    Some methods might be implemented to be used in the appropriate situation,
-    for example: using 'set_on_get' define the callable use when a 'CMD_GET'
-    is received. The ServerController class provide useful functions making
-    PyQt6 signal:
+    Basic usage:
         serv = ServerLHC(name, ...)
-        server_controller = ServerController()
-        serv.set_on_get(server_controller.on_get)
-    (This was made to avoid making the server a QObject)
-    
+        serv.start()          # start the server thread
+        serv.set_data(data)   # update server data
+        serv.stop()           # stop the server gracefully
+
+    Callbacks can be registered to react to incoming commands (e.g. 'CMD_GET').
+    The 'ServerController' class provides helper methods that emit PyQt6 signals,
+    allowing integration with Qt applications without making the server a QObject.
+
     Warning:
-        Since the server has its own thread, stopping the main process will not
-        necessarily stop the server. The user must close the server himself.
+        The server runs in a non-daemon thread and must be stopped explicitly
+        using 'stop()' to allow the Python process to exit cleanly.
+
     '''
 
     def __init__(
@@ -83,7 +81,7 @@ class ServerLHC(threading.Thread):
                 address: (str)
                     the server address. 
                     The format must be "tcp://'IP to listen':'port'", with:
-                        'tcp://' beeing the imposed protocol, 
+                        'tcp://' being the imposed protocol, 
                         'IP to listen' the IP address the server should listen 
                         or '*' (equivalent to 0.0.0.0) to listen every IP.
                 
@@ -92,12 +90,12 @@ class ServerLHC(threading.Thread):
                     (Number of motors the server should drive, 0 for camera)
                 
                 device: (str)
-                    The device associated to the server.
+                    the device associated to the server.
                     Among: {AVAILABLE_DEVICES}.
 
                 data: (dict)
-                    the dictionary stored by the server. Transmited by 'CMD_GET'. 
-                    Must be set using 'set_data' method.
+                    Initial dictionary stored by the server and transmitted on 'CMD_GET'.
+                    The data can be updated later using the 'set_data()' method.
                 
                 empty_data_after_get: (bool)
                     whether to empty the data dictionary stored in the server
@@ -105,10 +103,9 @@ class ServerLHC(threading.Thread):
                 
                 time_poll_ms: (int)
                     The timeout (in milliseconds) to wait for an event. 
-                    If unspecified (or specified None), will wait forever for an event.
                 
                 time_sleep_ms: (float)
-                    Delay execution (between 2 server polling) for a given number of milliseconds. 
+                    Delay execution between 2 polling cylces for a given number of milliseconds. 
                     The argument may be a floating point number for subsecond precision.
         '''
         
@@ -144,16 +141,17 @@ class ServerLHC(threading.Thread):
         self._server_ip = self.get_ip() # get the server IP
 
         self.capabilities = [
-            CMD_INFO, CMD_PING, CMD_GET, CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT
+            CMD_INFO, CMD_PING, CMD_GET, 
+            CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT
         ]
         self._handlers = {
-            CMD_INFO: handle_info,
-            CMD_PING: handle_ping,
-            CMD_GET:  handle_get,
-            CMD_SAVE: handle_save,
-            CMD_SET:  handle_set,
-            CMD_OPT:  handle_opt,
-            CMD_STOP: handle_stop,
+            CMD_INFO: handlers.handle_info,
+            CMD_PING: handlers.handle_ping,
+            CMD_GET:  handlers.handle_get,
+            CMD_SAVE: handlers.handle_save,
+            CMD_SET:  handlers.handle_set,
+            CMD_OPT:  handlers.handle_opt,
+            CMD_STOP: handlers.handle_stop,
         }
 
         # callable to emit a signal when corresponding messages are 
@@ -163,7 +161,15 @@ class ServerLHC(threading.Thread):
         self.on_get = None
         self.on_opt = None
 
+        self.callable_list = [
+            self.on_saving_path_changed,
+            self.on_position_changed,
+            self.on_get,
+            self.on_opt
+        ]
 
+
+    ### helpers
     def get_ip(self) -> str:
         '''Helper returning the IPV4 address of the running process.'''
         s = sock.socket(sock.AF_INET, sock.SOCK_DGRAM)
@@ -249,20 +255,21 @@ class ServerLHC(threading.Thread):
 
                     err = validate_message(message)  # message checking
                     if err:
-                        target = message.get("from", 'UNKNOWN')
+                        target = message.get("from", "UNKNOWN") if isinstance(message, dict) else "UNKNOWN"
+                        cmd = message.get("cmd", "UNKNOWN") if isinstance(message, dict) else "UNKNOWN"
                         log.error(f"Malformed message from {target}: {err}")
                         self.socket.send_json(
-                            make_error(sender=self.name, target=target, cmd=message.get("cmd", "UNKNOWN"), error_msg=err)
+                            make_error(sender=self.name, target=target, cmd=cmd, error_msg=err)
                         )
                         continue     
 
                     cmd = message.get("cmd")      # get the 'CMD'
                     target = message.get("from")  # get the sender
 
-                    handler = self._handlers.get(cmd)
+                    handler = self._handlers.get(cmd) # get the corresponding handler
 
                     if handler:
-                        handler(self, message, target)
+                        handler(self, message, target)  # use the handler
                     else:
                         self.socket.send_json(
                             make_error(
@@ -288,6 +295,12 @@ class ServerLHC(threading.Thread):
 
     ### emit
     def emit(self, callback_name: str, *args):
+        '''
+        Call a registered callback safely, if it exists.
+
+        The callback is invoked with the provided arguments and any exception
+        raised by the callback is caught and logged.
+        '''
         callback = getattr(self, callback_name, None)
         if callback:
             log.debug(f"'{callback_name}' function used.")
@@ -295,38 +308,6 @@ class ServerLHC(threading.Thread):
                 callback(*args)
             except Exception:
                 log.exception(f"Error in '{callback_name}' callback.")
-
-    # def emit_save(self, path):
-    #     if self.on_saving_path_changed:
-    #         log.debug("'on_saving_path_changed' function used.")
-    #         try:
-    #             self.on_saving_path_changed(path)
-    #         except Exception:
-    #             log.exception("Error in 'on_saving_path_changed' callback.")
-    
-    # def emit_positions(self, positions):
-    #     if self.on_position_changed:
-    #         log.debug("'on_position_changed' function used.")
-    #         try:
-    #             self.on_position_changed(positions)
-    #         except Exception:
-    #             log.exception("Error in 'on_position_changed' callback.")
-    
-    # def emit_get(self):
-    #     if self.on_get:
-    #         log.debug("'on_get' function used.")
-    #         try:
-    #             self.on_get()
-    #         except Exception:
-    #             log.exception("Error in 'on_get' callback.")
-    
-    # def emit_opt(self, data):
-    #     if self.on_opt:
-    #         log.debug("'on_opt' function used.")
-    #         try:
-    #             self.on_opt(data)
-    #         except Exception:
-    #             log.exception("Error in 'on_opt' callback.")
 
 
     ### setters

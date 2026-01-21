@@ -15,6 +15,7 @@ def handle_info(server, message, target):
         device=server.device,
         freedom=server.freedom,
         name=server.name,
-        capabilities=server.capabilities
+        capabilities=server.capabilities,
+        callbacks=server.callable_list
     )
     server.socket.send_json(response)

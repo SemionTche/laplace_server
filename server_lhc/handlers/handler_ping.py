@@ -11,7 +11,7 @@ def handle_ping(server, message: dict, target: str) -> None:
     log.debug(f"[Server {server.name}] Received: '{CMD_PING}' from '{target}'.")
     server.socket.send_json(
         make_pong(
-            server.name, 
-            target
+            sender=server.name, 
+            target=target
         )
     )

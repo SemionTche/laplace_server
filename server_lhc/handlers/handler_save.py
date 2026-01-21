@@ -16,12 +16,20 @@ def handle_save(server, message: dict, target: str) -> None:
     err = validate_payload(message, expected_keys=["path"])
     if err:
         server.socket.send_json(
-            make_error(sender=server.name, target=target, cmd=CMD_SAVE, error_msg=err)
+            make_error(
+                sender=server.name, 
+                target=target, 
+                cmd=CMD_SAVE, 
+                error_msg=err
+            )
         )
         return
     
     path = message["payload"]["path"]
     server.emit("on_saving_path_changed", path)
     server.socket.send_json(
-        make_save_reply(sender=server.name, target=target)
+        make_save_reply(
+            sender=server.name, 
+            target=target
+        )
     )
