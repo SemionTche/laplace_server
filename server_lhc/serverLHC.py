@@ -322,7 +322,7 @@ class ServerLHC(threading.Thread):
             )
             return
 
-        self.emit_saving_path_changed(path)
+        self.emit_save(path)
         self.socket.send_json(
             make_save_reply(sender=self.name, target=target)
         )
@@ -342,7 +342,7 @@ class ServerLHC(threading.Thread):
             )
             return
 
-        self.emit_position_changed(positions)
+        self.emit_positions(positions)
         self.socket.send_json(
             make_set_reply(sender=self.name, target=target)
         )
@@ -362,32 +362,44 @@ class ServerLHC(threading.Thread):
             )
             return
 
-        self.emit_opt_changed(data)
+        self.emit_opt(data)
         self.socket.send_json(
             make_opt_reply(sender=self.name, target=target)
         )
 
 
     ### emit
-    def emit_saving_path_changed(self, path):
+    def emit_save(self, path):
         if self.on_saving_path_changed:
             log.debug("'on_saving_path_changed' function used.")
-            self.on_saving_path_changed(path)
+            try:
+                self.on_saving_path_changed(path)
+            except Exception:
+                log.exception("Error in 'on_saving_path_changed' callback.")
     
-    def emit_position_changed(self, positions):
+    def emit_positions(self, positions):
         if self.on_position_changed:
             log.debug("'on_position_changed' function used.")
-            self.on_position_changed(positions)
+            try:
+                self.on_position_changed(positions)
+            except Exception:
+                log.exception("Error in 'on_position_changed' callback.")
     
     def emit_get(self):
         if self.on_get:
             log.debug("'on_get' function used.")
-            self.on_get()
+            try:
+                self.on_get()
+            except Exception:
+                log.exception("Error in 'on_get' callback.")
     
-    def emit_opt_changed(self, data):
+    def emit_opt(self, data):
         if self.on_opt:
             log.debug("'on_opt' function used.")
-            self.on_opt(data)
+            try:
+                self.on_opt(data)
+            except Exception:
+                log.exception("Error in 'on_opt' callback.")
 
 
     ### setters
