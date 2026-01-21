@@ -1,5 +1,5 @@
 # protocol version
-PROTOCOL_VERSION = "1.5"
+PROTOCOL_VERSION = "0.1.5"
 
 # commands
 CMD_INFO = "INFO"

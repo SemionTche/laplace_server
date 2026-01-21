@@ -21,7 +21,7 @@ from server_lhc.protocol import (
     # available devices
     AVAILABLE_DEVICES,
 
-    # the nme of the logger instance
+    # the name of the logger instance
     LOGGER_NAME
 )
 from server_lhc.check_format import(
@@ -73,40 +73,40 @@ class ServerLHC(threading.Thread):
             time_sleep_ms: float = 10
         ):
         f'''
-        Args:
-            name: (str)
-                the server name.
-            
-            address: (str)
-                the server address. 
-                The format must be "tcp://'IP to listen':'port'", with:
-                    'tcp://' beeing the imposed protocol, 
-                    'IP to listen' the IP address the server should listen 
-                    or '*' (equivalent to 0.0.0.0) to listen every IP.
-            
-            freedom: (int)
-                the degree of freedom of the associated device.
-                (Number of motors the server should drive, 0 for camera)
-            
-            device: (str)
-                The device associated to the server.
-                Among: {AVAILABLE_DEVICES}.
+            Args:
+                name: (str)
+                    the server name.
+                
+                address: (str)
+                    the server address. 
+                    The format must be "tcp://'IP to listen':'port'", with:
+                        'tcp://' beeing the imposed protocol, 
+                        'IP to listen' the IP address the server should listen 
+                        or '*' (equivalent to 0.0.0.0) to listen every IP.
+                
+                freedom: (int)
+                    the degree of freedom of the associated device.
+                    (Number of motors the server should drive, 0 for camera)
+                
+                device: (str)
+                    The device associated to the server.
+                    Among: {AVAILABLE_DEVICES}.
 
-            data: (dict)
-                the dictionary stored by the server. Transmited by 'CMD_GET'. 
-                Must be set using 'set_data' method.
-            
-            empty_data_after_get: (bool)
-                whether to empty the data dictionary stored in the server
-                after transmission through 'CMD_GET'. (default {False})
-            
-            time_poll_ms: (int)
-                The timeout (in milliseconds) to wait for an event. 
-                If unspecified (or specified None), will wait forever for an event.
-            
-            time_sleep_ms: (float)
-                Delay execution (between 2 server polling) for a given number of milliseconds. 
-                The argument may be a floating point number for subsecond precision.
+                data: (dict)
+                    the dictionary stored by the server. Transmited by 'CMD_GET'. 
+                    Must be set using 'set_data' method.
+                
+                empty_data_after_get: (bool)
+                    whether to empty the data dictionary stored in the server
+                    after transmission through 'CMD_GET'. (default {False})
+                
+                time_poll_ms: (int)
+                    The timeout (in milliseconds) to wait for an event. 
+                    If unspecified (or specified None), will wait forever for an event.
+                
+                time_sleep_ms: (float)
+                    Delay execution (between 2 server polling) for a given number of milliseconds. 
+                    The argument may be a floating point number for subsecond precision.
         '''
         
         super().__init__() # heritage from Thread
