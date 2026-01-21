@@ -10,7 +10,7 @@ log = logging.getLogger(LOGGER_NAME)
 
 
 # checking formats
-def format_device(device: str) -> str | None:
+def validate_device(device: str) -> str | None:
     """Check if device is among AVAILABLE_DEVICES."""
     if device not in AVAILABLE_DEVICES:
         msg = (f"Invalid device: '{device}'. "
@@ -19,7 +19,7 @@ def format_device(device: str) -> str | None:
         return msg
     return None
 
-def format_freedom(freedom: int) -> str | None:
+def validate_freedom(freedom: int) -> str | None:
     """Check if freedom is an int."""
     if not isinstance(freedom, int):
         msg = f"'freedom' must be int, not {type(freedom).__name__}."
@@ -32,7 +32,7 @@ def format_freedom(freedom: int) -> str | None:
     return None
 
 
-def format_address(address: str) -> str | None:
+def validate_address(address: str) -> str | None:
     """Check address format."""
     if not isinstance(address, str):
         msg = f"'address' must be str, not {type(address).__name__}."
@@ -45,7 +45,7 @@ def format_address(address: str) -> str | None:
     return None
 
 
-def format_message(message: dict) -> str | None:
+def validate_message(message: dict) -> str | None:
     """Check message structure and version."""
     if not isinstance(message, dict):
         msg = f"Message must be dict, got {type(message).__name__}."
@@ -74,7 +74,7 @@ def format_message(message: dict) -> str | None:
 
     return None
 
-def format_payload(message: dict, expected_keys: list[str]) -> str | None:
+def validate_payload(message: dict, expected_keys: list[str]) -> str | None:
     """Check payload contains expected keys."""
     payload = message.get("payload")
     if not isinstance(payload, dict):

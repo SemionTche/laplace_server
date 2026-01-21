@@ -14,9 +14,7 @@ from server_lhc.protocol import (
     CMD_INFO, CMD_PING, CMD_GET, CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT, 
     
     # available messages
-    make_info_reply, make_pong, make_get_reply,
-    make_save_reply, make_set_reply, make_opt_reply, 
-    make_error, make_stop_reply, make_stop,
+    make_error, make_stop,
     
     # available devices
     AVAILABLE_DEVICES,
@@ -24,10 +22,14 @@ from server_lhc.protocol import (
     # the name of the logger instance
     LOGGER_NAME
 )
-from server_lhc.check_format import(
+from server_lhc.validations import(
     # format checkers
-    format_device, format_freedom, format_address, 
-    format_message, format_payload
+    validate_device, validate_freedom, validate_address, 
+    validate_message
+)
+from server_lhc.handlers import(
+    handle_get, handle_info, handle_opt,
+    handle_ping, handle_save, handle_set, handle_stop
 )
 
 log = logging.getLogger(LOGGER_NAME)
@@ -113,15 +115,16 @@ class ServerLHC(threading.Thread):
         super().__init__() # heritage from Thread
         
         # checking format
-        format_address(address)
-        format_freedom(freedom)
-        format_device(device)
+        validate_address(address)
+        validate_freedom(freedom)
+        validate_device(device)
         
         # creating the server Thread
         self._running = threading.Event()
         self._running.set()
 
-        self._data_lock = threading.Lock() # ensure only one thread can access the value at the same time
+        # ensure only one thread can access the value at the same time
+        self._data_lock = threading.Lock()
 
         # set attributes
         self.name = name
@@ -144,13 +147,13 @@ class ServerLHC(threading.Thread):
             CMD_INFO, CMD_PING, CMD_GET, CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT
         ]
         self._handlers = {
-            CMD_INFO: self._handle_info,
-            CMD_PING: self._handle_ping,
-            CMD_GET:  self._handle_get,
-            CMD_SAVE: self._handle_save,
-            CMD_SET:  self._handle_set,
-            CMD_OPT:  self._handle_opt,
-            CMD_STOP: self._handle_stop,
+            CMD_INFO: handle_info,
+            CMD_PING: handle_ping,
+            CMD_GET:  handle_get,
+            CMD_SAVE: handle_save,
+            CMD_SET:  handle_set,
+            CMD_OPT:  handle_opt,
+            CMD_STOP: handle_stop,
         }
 
         # callable to emit a signal when corresponding messages are 
@@ -244,7 +247,7 @@ class ServerLHC(threading.Thread):
                 if self.socket.poll(self.time_poll_ms):  # poll for 100 ms
                     message = self.socket.recv_json()
 
-                    err = format_message(message)  # message checking
+                    err = validate_message(message)  # message checking
                     if err:
                         target = message.get("from", 'UNKNOWN')
                         log.error(f"Malformed message from {target}: {err}")
@@ -259,7 +262,7 @@ class ServerLHC(threading.Thread):
                     handler = self._handlers.get(cmd)
 
                     if handler:
-                        handler(message, target)
+                        handler(self, message, target)
                     else:
                         self.socket.send_json(
                             make_error(
@@ -283,120 +286,47 @@ class ServerLHC(threading.Thread):
         log.info(f"[Server {self.name}] Stopped.")
 
 
-    ### handlers
-    def _handle_stop(self, message: dict, target: str) -> None:
-        log.info(f"[Server {self.name}] Received: '{CMD_STOP}' from '{target}'.")
-        self._running.clear()
-        self.socket.send_json(
-            make_stop_reply(sender=self.name, target=target)
-        )
-
-    def _handle_info(self, message: dict, target: str) -> None:
-        log.info(f"[Server {self.name}] Received: '{CMD_INFO}' from '{target}'.")
-        response = make_info_reply(
-            sender=self.name,
-            target=target,
-            device=self.device,
-            freedom=self.freedom,
-            name=self.name,
-            capabilities=self.capabilities
-        )
-        self.socket.send_json(response)
-    
-    def _handle_ping(self, message: dict, target: str) -> None:
-        log.debug(f"[Server {self.name}] Received: '{CMD_PING}' from '{target}'.")
-        self.socket.send_json(
-            make_pong(self.name, target)
-        )
-    
-    def _handle_get(self, message: dict, target: str) -> None:
-        log.debug(f"[Server {self.name}] Received: '{CMD_GET}' from '{target}'.")
-        self.socket.send_json(
-            make_get_reply(sender=self.name, target=target, data=self.data)
-        )
-        self.emit_get()
-        if self.empty_data_after_get:
-            self.empty_data()
-    
-    def _handle_save(self, message: dict, target: str) -> None:
-        log.info(f"[Server {self.name}] Received: '{CMD_SAVE}' from '{target}'.")
-        err = format_payload(message, expected_keys=["path"])
-        if err:
-            self.socket.send_json(
-                make_error(sender=self.name, target=target, cmd=CMD_SET, error_msg=err)
-            )
-            return
-        
-        path = message["payload"]["path"]
-        self.emit_save(path)
-        self.socket.send_json(
-            make_save_reply(sender=self.name, target=target)
-        )
-
-    def _handle_set(self, message: dict, target: str) -> None:
-        log.info(f"[Server {self.name}] Received: '{CMD_SET}' from '{target}'.")
-
-        err = format_payload(message, expected_keys=["positions"])
-        if err:
-            self.socket.send_json(
-                make_error(sender=self.name, target=target, cmd=CMD_SET, error_msg=err)
-            )
-            return
-        
-        positions = message["payload"]["positions"]
-        self.emit_positions(positions)
-        self.socket.send_json(
-            make_set_reply(sender=self.name, target=target)
-        )
-    
-    def _handle_opt(self, message: dict, target: str) -> None:
-        log.info(f"[Server {self.name}] Received: '{CMD_OPT}' from '{target}'.")
-        err = format_payload(message, expected_keys=["data"])
-        if err:
-            self.socket.send_json(
-                make_error(sender=self.name, target=target, cmd=CMD_SET, error_msg=err)
-            )
-            return
-        
-        data = message["payload"]["data"]
-        self.emit_opt(data)
-        self.socket.send_json(
-            make_opt_reply(sender=self.name, target=target)
-        )
-
-
     ### emit
-    def emit_save(self, path):
-        if self.on_saving_path_changed:
-            log.debug("'on_saving_path_changed' function used.")
+    def emit(self, callback_name: str, *args):
+        callback = getattr(self, callback_name, None)
+        if callback:
+            log.debug(f"'{callback_name}' function used.")
             try:
-                self.on_saving_path_changed(path)
+                callback(*args)
             except Exception:
-                log.exception("Error in 'on_saving_path_changed' callback.")
+                log.exception(f"Error in '{callback_name}' callback.")
+
+    # def emit_save(self, path):
+    #     if self.on_saving_path_changed:
+    #         log.debug("'on_saving_path_changed' function used.")
+    #         try:
+    #             self.on_saving_path_changed(path)
+    #         except Exception:
+    #             log.exception("Error in 'on_saving_path_changed' callback.")
     
-    def emit_positions(self, positions):
-        if self.on_position_changed:
-            log.debug("'on_position_changed' function used.")
-            try:
-                self.on_position_changed(positions)
-            except Exception:
-                log.exception("Error in 'on_position_changed' callback.")
+    # def emit_positions(self, positions):
+    #     if self.on_position_changed:
+    #         log.debug("'on_position_changed' function used.")
+    #         try:
+    #             self.on_position_changed(positions)
+    #         except Exception:
+    #             log.exception("Error in 'on_position_changed' callback.")
     
-    def emit_get(self):
-        if self.on_get:
-            log.debug("'on_get' function used.")
-            try:
-                self.on_get()
-            except Exception:
-                log.exception("Error in 'on_get' callback.")
+    # def emit_get(self):
+    #     if self.on_get:
+    #         log.debug("'on_get' function used.")
+    #         try:
+    #             self.on_get()
+    #         except Exception:
+    #             log.exception("Error in 'on_get' callback.")
     
-    def emit_opt(self, data):
-        if self.on_opt:
-            log.debug("'on_opt' function used.")
-            try:
-                self.on_opt(data)
-            except Exception:
-                log.exception("Error in 'on_opt' callback.")
+    # def emit_opt(self, data):
+    #     if self.on_opt:
+    #         log.debug("'on_opt' function used.")
+    #         try:
+    #             self.on_opt(data)
+    #         except Exception:
+    #             log.exception("Error in 'on_opt' callback.")
 
 
     ### setters
