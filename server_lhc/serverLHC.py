@@ -136,6 +136,15 @@ class ServerLHC(threading.Thread):
         self.capabilities = [
             CMD_INFO, CMD_PING, CMD_GET, CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT
         ]
+        self._handlers = {
+            CMD_INFO: self._handle_info,
+            CMD_PING: self._handle_ping,
+            CMD_GET:  self._handle_get,
+            CMD_SAVE: self._handle_save,
+            CMD_SET:  self._handle_set,
+            CMD_OPT:  self._handle_opt,
+            CMD_STOP: self._handle_stop,
+        }
 
         # creating the server Thread
         self._running = threading.Event()
@@ -235,88 +244,12 @@ class ServerLHC(threading.Thread):
 
                     cmd = message.get("cmd")      # get the 'CMD'
                     target = message.get("from")  # get the sender
-                    
-                    # stop the thread
-                    if cmd == CMD_STOP:
-                        log.info(f"[Server {self.name}] Received: '{cmd}' from '{target}'.")
-                        self.socket.send_json( make_stop_reply(sender=self.name, target=target) )
-                        break    # interrupt the loop
-                    
-                    elif cmd == CMD_INFO:
-                        log.info(f"[Server {self.name}] Received: '{cmd}' from '{target}'.")
-                        response = make_info_reply(
-                            sender = self.name,
-                            target = target,
-                            device = self.device,
-                            freedom = self.freedom,
-                            name = self.name,
-                            capabilities = self.capabilities
-                            )
-                        self.socket.send_json(response)
-                    
-                    elif cmd == CMD_PING:
-                        log.debug(f"[Server {self.name}] Received: '{cmd}' from '{target}'.")
-                        self.socket.send_json( make_pong(self.name, target) )
 
-                    # send the dictionnary
-                    elif cmd == CMD_GET:
-                        log.debug(f"[Server {self.name}] Received: '{cmd}' from '{target}'.")
-                        self.socket.send_json(
-                            make_get_reply(sender=self.name, target=target, data=self.data)
-                        )
-                        self.emit_get()                 # use the function set by the user 'on_get'
-                        if self.empty_data_after_get:   # if required
-                            self.empty_data()           # empty the dictionary after response
-                    
-                    elif cmd == CMD_SAVE:
-                        log.info(f"[Server {self.name}] Received: '{cmd}' from '{target}'.")
-                        path = message.get("payload", {}).get("path")
-                        if not path:
-                            self.socket.send_json(
-                                make_error(
-                                    sender=self.name,
-                                    target=target,
-                                    cmd=CMD_SAVE,
-                                    error_msg="Missing path"
-                                )
-                            )
-                        else:
-                            self.emit_saving_path_changed(path)   # use the function set by the user 'on_saving_path_changed'
-                            self.socket.send_json( make_save_reply(sender=self.name, target=target) )
-                    
-                    elif cmd == CMD_SET:
-                        log.info(f"[Server {self.name}] Received: '{cmd}' from '{target}'.")
-                        positions = message.get("payload", {}).get("positions")
-                        if not positions:
-                            self.socket.send_json(
-                                make_error(
-                                    sender=self.name,
-                                    target=target,
-                                    cmd=CMD_SET,
-                                    error_msg="Missing positions"
-                                )
-                            )
-                        else:
-                            self.emit_position_changed(positions)  # use the function set by the user 'on_position_changed'
-                            self.socket.send_json( make_set_reply(sender=self.name, target=target) )
-                    
-                    elif cmd == CMD_OPT:
-                        log.info(f"[Server {self.name}] Received: '{cmd}' from '{target}'.")
-                        data = message.get("payload", {}).get("data")
-                        if not data:
-                            self.socket.send_json(
-                                make_error(
-                                    sender=self.name,
-                                    target=target,
-                                    cmd=CMD_OPT,
-                                    error_msg="Missing data"
-                                )
-                            )
-                        else:
-                            self.emit_opt_changed(data)
-                            self.socket.send_json( make_opt_reply(sender=self.name, target=target) )
-                    
-                    else :
+                    handler = self._handlers.get(cmd)
+
+                    if handler:
+                        handler(message, target)
+                    else:
                         self.socket.send_json(
                             make_error(
                                 sender=self.name,
@@ -337,6 +270,102 @@ class ServerLHC(threading.Thread):
         self.socket.close(0) # close the server
         self.context.term()  # close the context
         log.info(f"[Server {self.name}] Stopped.")
+
+
+    ### handlers
+    def _handle_stop(self, message: dict, target: str) -> None:
+        log.info(f"[Server {self.name}] Received: '{CMD_STOP}' from '{target}'.")
+        self.socket.send_json(
+            make_stop_reply(sender=self.name, target=target)
+        )
+        self._running.clear()
+
+    def _handle_info(self, message: dict, target: str) -> None:
+        log.info(f"[Server {self.name}] Received: '{CMD_INFO}' from '{target}'.")
+        response = make_info_reply(
+            sender=self.name,
+            target=target,
+            device=self.device,
+            freedom=self.freedom,
+            name=self.name,
+            capabilities=self.capabilities
+        )
+        self.socket.send_json(response)
+    
+    def _handle_ping(self, message: dict, target: str) -> None:
+        log.debug(f"[Server {self.name}] Received: '{CMD_PING}' from '{target}'.")
+        self.socket.send_json(
+            make_pong(self.name, target)
+        )
+    
+    def _handle_get(self, message: dict, target: str) -> None:
+        log.debug(f"[Server {self.name}] Received: '{CMD_GET}' from '{target}'.")
+        self.socket.send_json(
+            make_get_reply(sender=self.name, target=target, data=self.data)
+        )
+        self.emit_get()
+        if self.empty_data_after_get:
+            self.empty_data()
+    
+    def _handle_save(self, message: dict, target: str) -> None:
+        log.info(f"[Server {self.name}] Received: '{CMD_SAVE}' from '{target}'.")
+        path = message.get("payload", {}).get("path")
+
+        if not path:
+            self.socket.send_json(
+                make_error(
+                    sender=self.name,
+                    target=target,
+                    cmd=CMD_SAVE,
+                    error_msg="Missing path"
+                )
+            )
+            return
+
+        self.emit_saving_path_changed(path)
+        self.socket.send_json(
+            make_save_reply(sender=self.name, target=target)
+        )
+
+    def _handle_set(self, message: dict, target: str) -> None:
+        log.info(f"[Server {self.name}] Received: '{CMD_SET}' from '{target}'.")
+        positions = message.get("payload", {}).get("positions")
+
+        if not positions:
+            self.socket.send_json(
+                make_error(
+                    sender=self.name,
+                    target=target,
+                    cmd=CMD_SET,
+                    error_msg="Missing positions"
+                )
+            )
+            return
+
+        self.emit_position_changed(positions)
+        self.socket.send_json(
+            make_set_reply(sender=self.name, target=target)
+        )
+    
+    def _handle_opt(self, message: dict, target: str) -> None:
+        log.info(f"[Server {self.name}] Received: '{CMD_OPT}' from '{target}'.")
+        data = message.get("payload", {}).get("data")
+
+        if not data:
+            self.socket.send_json(
+                make_error(
+                    sender=self.name,
+                    target=target,
+                    cmd=CMD_OPT,
+                    error_msg="Missing data"
+                )
+            )
+            return
+
+        self.emit_opt_changed(data)
+        self.socket.send_json(
+            make_opt_reply(sender=self.name, target=target)
+        )
 
 
     ### emit
