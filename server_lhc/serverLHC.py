@@ -150,6 +150,8 @@ class ServerLHC(threading.Thread):
         self._running = threading.Event()
         self._running.set()
 
+        self._data_lock = threading.Lock() # ensure only one thread can access at the value at the same time
+
         # callable to emit a signal when corresponding messages are 
         # received. Need to be set by the user when deploying the server
         self.on_saving_path_changed = None
@@ -171,11 +173,12 @@ class ServerLHC(threading.Thread):
     
     def set_data(self, new_data: dict) -> None:
         '''Set a new dictionary.'''
-        self._data = new_data
-        log.debug(f"[Server {self.name}] Server new dictionary setted.")
+        with self._data_lock:     # if the thread can access the data
+            self._data = new_data
+            log.debug(f"[Server {self.name}] Server new dictionary setted.")
         
-        d = json.dumps(self.data, indent=4, sort_keys=True, default=str) # making a json
-        log.debug(f"[Server {self.name}] Current dictionary:\n" + d )
+            d = json.dumps(self.data, indent=4, sort_keys=True, default=str) # making a json
+            log.debug(f"[Server {self.name}] Current dictionary:\n" + d )
 
     
     def empty_data(self) -> None:
@@ -186,9 +189,9 @@ class ServerLHC(threading.Thread):
 
     @property
     def data(self) -> dict:
-        '''Helper to avoid 'data' direct modification.
-            To modify 'data', use 'set_data'.'''
-        return self._data
+        '''Thread-safe read-only access to data'''
+        with self._data_lock:       # if the thread can access the data
+            return dict(self._data)
     
     @property
     def address(self) -> str:
