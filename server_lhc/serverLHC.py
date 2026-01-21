@@ -225,7 +225,7 @@ class ServerLHC(threading.Thread):
         log.info(f"[Server {self.name}] To connect with, use: {self.address_for_client}")
 
         while self._running.is_set():
-            
+
             try:
                 
                 if self.socket.poll(self.time_poll_ms):  # poll for 100 ms
@@ -393,23 +393,32 @@ class ServerLHC(threading.Thread):
         To do so, the function create a client that will send the message, 
         wait for the server to stop and then close itself.
         '''
-        log.info(f"[Server {self.name}] Stopping...")
+        if self.is_alive():  # if the thread is alive
 
-        # create a client ZMQ
-        ctx = zmq.Context()
-        socket = ctx.socket(zmq.REQ)
+            log.info(f"[Server {self.name}] Stopping...")
 
-        socket.connect(self.address_for_client)
+            self._running.clear() # update the flag
 
-        try:
-            # try to send 'CMD_STOP' to the server
-            socket.send_json( make_stop(sender="local", target=self.name) )
-            socket.recv_json()  # response is mandatory in REP
-        except Exception as e:
-            log.error(f"[Server {self.name}] Stop error:", e)
+            # create a client ZMQ
+            ctx = zmq.Context()
+            socket = ctx.socket(zmq.REQ)
 
-        socket.close(0) # close the client
-        ctx.term()      # close the client context
+            socket.connect(self.address_for_client)
 
-        self._running.clear() # update the flag
-        self.join()           # wait until the thread terminates
+            try:
+                # try to send 'CMD_STOP' to the server
+                socket.send_json( make_stop(sender="local", target=self.name) )
+                socket.recv_json()  # response is mandatory in REP
+            except Exception as e:
+                log.error(f"[Server {self.name}] Stop error:", e)
+
+            socket.close(0) # close the client
+            ctx.term()      # close the client context
+
+            self.join()     # wait until the thread terminates
+
+
+if __name__ == "__main__":
+    serv = ServerLHC("test", "tcp://*:1", 0, AVAILABLE_DEVICES[0], {}, False)
+    # serv.start()
+    serv.stop()
