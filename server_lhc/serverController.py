@@ -17,7 +17,7 @@ class ServerController(QObject):
         super().__init__(parent)
 
 
-    def on_server_save_path(self, path: str) -> None:
+    def on_saving_path_changed(self, path: str) -> None:
         '''Emit a 'path' string.'''
         self.saving_path_changed.emit(path)
 

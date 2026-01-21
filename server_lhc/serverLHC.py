@@ -26,7 +26,8 @@ from server_lhc.protocol import (
 )
 from server_lhc.check_format import(
     # format checkers
-    format_device, format_freedom, format_address, format_message
+    format_device, format_freedom, format_address, 
+    format_message, format_payload
 )
 
 log = logging.getLogger(LOGGER_NAME)
@@ -115,6 +116,12 @@ class ServerLHC(threading.Thread):
         format_address(address)
         format_freedom(freedom)
         format_device(device)
+        
+        # creating the server Thread
+        self._running = threading.Event()
+        self._running.set()
+
+        self._data_lock = threading.Lock() # ensure only one thread can access the value at the same time
 
         # set attributes
         self.name = name
@@ -146,12 +153,6 @@ class ServerLHC(threading.Thread):
             CMD_STOP: self._handle_stop,
         }
 
-        # creating the server Thread
-        self._running = threading.Event()
-        self._running.set()
-
-        self._data_lock = threading.Lock() # ensure only one thread can access at the value at the same time
-
         # callable to emit a signal when corresponding messages are 
         # received. Need to be set by the user when deploying the server
         self.on_saving_path_changed = None
@@ -177,7 +178,7 @@ class ServerLHC(threading.Thread):
             self._data = new_data
             log.debug(f"[Server {self.name}] Server new dictionary setted.")
         
-            d = json.dumps(self.data, indent=4, sort_keys=True, default=str) # making a json
+            d = json.dumps(dict(self._data), indent=4, sort_keys=True, default=str) # making a json
             log.debug(f"[Server {self.name}] Current dictionary:\n" + d )
 
     
@@ -243,7 +244,14 @@ class ServerLHC(threading.Thread):
                 if self.socket.poll(self.time_poll_ms):  # poll for 100 ms
                     message = self.socket.recv_json()
 
-                    format_message(message)       # message checking
+                    err = format_message(message)  # message checking
+                    if err:
+                        target = message.get("from", 'UNKNOWN')
+                        log.error(f"Malformed message from {target}: {err}")
+                        self.socket.send_json(
+                            make_error(sender=self.name, target=target, cmd=message.get("cmd", "UNKNOWN"), error_msg=err)
+                        )
+                        continue     
 
                     cmd = message.get("cmd")      # get the 'CMD'
                     target = message.get("from")  # get the sender
@@ -278,10 +286,10 @@ class ServerLHC(threading.Thread):
     ### handlers
     def _handle_stop(self, message: dict, target: str) -> None:
         log.info(f"[Server {self.name}] Received: '{CMD_STOP}' from '{target}'.")
+        self._running.clear()
         self.socket.send_json(
             make_stop_reply(sender=self.name, target=target)
         )
-        self._running.clear()
 
     def _handle_info(self, message: dict, target: str) -> None:
         log.info(f"[Server {self.name}] Received: '{CMD_INFO}' from '{target}'.")
@@ -312,19 +320,14 @@ class ServerLHC(threading.Thread):
     
     def _handle_save(self, message: dict, target: str) -> None:
         log.info(f"[Server {self.name}] Received: '{CMD_SAVE}' from '{target}'.")
-        path = message.get("payload", {}).get("path")
-
-        if not path:
+        err = format_payload(message, expected_keys=["path"])
+        if err:
             self.socket.send_json(
-                make_error(
-                    sender=self.name,
-                    target=target,
-                    cmd=CMD_SAVE,
-                    error_msg="Missing path"
-                )
+                make_error(sender=self.name, target=target, cmd=CMD_SET, error_msg=err)
             )
             return
-
+        
+        path = message["payload"]["path"]
         self.emit_save(path)
         self.socket.send_json(
             make_save_reply(sender=self.name, target=target)
@@ -332,19 +335,15 @@ class ServerLHC(threading.Thread):
 
     def _handle_set(self, message: dict, target: str) -> None:
         log.info(f"[Server {self.name}] Received: '{CMD_SET}' from '{target}'.")
-        positions = message.get("payload", {}).get("positions")
 
-        if not positions:
+        err = format_payload(message, expected_keys=["positions"])
+        if err:
             self.socket.send_json(
-                make_error(
-                    sender=self.name,
-                    target=target,
-                    cmd=CMD_SET,
-                    error_msg="Missing positions"
-                )
+                make_error(sender=self.name, target=target, cmd=CMD_SET, error_msg=err)
             )
             return
-
+        
+        positions = message["payload"]["positions"]
         self.emit_positions(positions)
         self.socket.send_json(
             make_set_reply(sender=self.name, target=target)
@@ -352,19 +351,14 @@ class ServerLHC(threading.Thread):
     
     def _handle_opt(self, message: dict, target: str) -> None:
         log.info(f"[Server {self.name}] Received: '{CMD_OPT}' from '{target}'.")
-        data = message.get("payload", {}).get("data")
-
-        if not data:
+        err = format_payload(message, expected_keys=["data"])
+        if err:
             self.socket.send_json(
-                make_error(
-                    sender=self.name,
-                    target=target,
-                    cmd=CMD_OPT,
-                    error_msg="Missing data"
-                )
+                make_error(sender=self.name, target=target, cmd=CMD_SET, error_msg=err)
             )
             return
-
+        
+        data = message["payload"]["data"]
         self.emit_opt(data)
         self.socket.send_json(
             make_opt_reply(sender=self.name, target=target)
@@ -437,32 +431,22 @@ class ServerLHC(threading.Thread):
         To do so, the function create a client that will send the message, 
         wait for the server to stop and then close itself.
         '''
-        if self.is_alive():  # if the thread is alive
+        if not self.is_alive():  # if the thread is not alive
+            return               # there is nothing to do
+        
+        log.info(f"[Server {self.name}] Stopping...")
 
-            log.info(f"[Server {self.name}] Stopping...")
+        # create a client ZMQ
+        ctx = zmq.Context()
+        socket = ctx.socket(zmq.REQ)
+        socket.connect(self.address_for_client)
 
-            self._running.clear() # update the flag
+        try:
+            # try to send 'CMD_STOP' to the server
+            socket.send_json( make_stop(sender="local", target=self.name) )
+            socket.recv_json()  # response is mandatory in REP
+        finally:
+            socket.close(0)  # close the client
+            ctx.term()       # close the client context
 
-            # create a client ZMQ
-            ctx = zmq.Context()
-            socket = ctx.socket(zmq.REQ)
-
-            socket.connect(self.address_for_client)
-
-            try:
-                # try to send 'CMD_STOP' to the server
-                socket.send_json( make_stop(sender="local", target=self.name) )
-                socket.recv_json()  # response is mandatory in REP
-            except Exception as e:
-                log.error(f"[Server {self.name}] Stop error:", e)
-
-            socket.close(0) # close the client
-            ctx.term()      # close the client context
-
-            self.join()     # wait until the thread terminates
-
-
-if __name__ == "__main__":
-    serv = ServerLHC("test", "tcp://*:1", 0, AVAILABLE_DEVICES[0], {}, False)
-    # serv.start()
-    serv.stop()
+        self.join(timeout=2)     # wait until the thread terminates

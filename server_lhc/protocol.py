@@ -1,5 +1,5 @@
 # protocol version
-PROTOCOL_VERSION = "0.1.5"
+PROTOCOL_VERSION = "0.1.6"
 
 # commands
 CMD_INFO = "INFO"
@@ -8,8 +8,7 @@ CMD_GET  = "GET"
 CMD_SAVE = "SAVE"
 CMD_SET = "SET"
 CMD_STOP = "STOP"
-CMD_ERROR = "ERROR"
-CMD_OPT = "INFO_OPT"
+CMD_OPT = "OPT"
 
 # devices
 DEVICE_MOTOR = "MOTOR"

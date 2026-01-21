@@ -2,49 +2,90 @@
 import logging
 
 # project
-from server_lhc.protocol import AVAILABLE_DEVICES, LOGGER_NAME
+from server_lhc.protocol import (
+    AVAILABLE_DEVICES, LOGGER_NAME, PROTOCOL_VERSION
+)
 
 log = logging.getLogger(LOGGER_NAME)
 
 
 # checking formats
-def format_device(device: str) -> None:
-    '''Check if the device argument is among the 'AVAILABLE_DEVICES'.'''
+def format_device(device: str) -> str | None:
+    """Check if device is among AVAILABLE_DEVICES."""
     if device not in AVAILABLE_DEVICES:
-        log.error(f"Error: 'device' argument provided: '{device}' is invalid.\n" + 
-                    f"The device must be choosen among the available devices: {AVAILABLE_DEVICES}.")
-        raise ValueError(f"Error: 'device' argument provided: '{device}' is invalid.\n" + 
-                    f"The device must be choosen among the available devices: {AVAILABLE_DEVICES}.")
+        msg = (f"Invalid device: '{device}'. "
+               f"Choose among {AVAILABLE_DEVICES}.")
+        log.warning(msg)
+        return msg
+    return None
 
-
-def format_freedom(freedom: int) -> None:
-    '''Check if the freedom argument is an integer.'''
+def format_freedom(freedom: int) -> str | None:
+    """Check if freedom is an int."""
     if not isinstance(freedom, int):
-        log.error(f"Error: 'freedom' argument must be an '{int.__name__}' not: '{type(freedom).__name__}'.")
-        raise TypeError(f"Error: 'freedom' argument must be an '{int.__name__}' not: '{type(freedom).__name__}'.")
+        msg = f"'freedom' must be int, not {type(freedom).__name__}."
+        log.warning(msg)
+        return msg
+    if not freedom >=0:
+        msg = f"'freedom' must be positive (>=0), not {freedom}."
+        log.warning(msg)
+        return msg
+    return None
 
 
-def format_address(address: str) -> None:
-    '''Check if the address argument is a string and use the right protocol.'''
+def format_address(address: str) -> str | None:
+    """Check address format."""
     if not isinstance(address, str):
-        log.error(f"Error: 'address' argument must be a '{str.__name__}' not: '{type(address).__name__}'.")
-        raise TypeError(f"Error: 'address' argument must be a '{str.__name__}' not: '{type(address).__name__}'.")
-
+        msg = f"'address' must be str, not {type(address).__name__}."
+        log.warning(msg)
+        return msg
     if not address.startswith("tcp://"):
-        log.error(f"Error: server address must use 'tcp' protocol, meaning starting by 'tcp://', not: '{address}'.")
-        raise ValueError(f"Error: server address must use 'tcp' protocol, meaning starting by 'tcp://', not: '{address}'.")
+        msg = f"Address must start with 'tcp://', got '{address}'."
+        log.warning(msg)
+        return msg
+    return None
 
 
-def format_message(message: dict) -> None:
-    '''Check if the message argument is a dictionary and its contant.'''
+def format_message(message: dict) -> str | None:
+    """Check message structure and version."""
     if not isinstance(message, dict):
-        log.error(f"Error: 'message' argument must be an '{dict.__name__}' not: '{type(message).__name__}'.")
-        raise TypeError(f"Error: 'message' argument must be an '{dict.__name__}' not: '{type(message).__name__}'.")
-    
+        msg = f"Message must be dict, got {type(message).__name__}."
+        log.warning(msg)
+        return msg
+
+    if message.get("version") != PROTOCOL_VERSION:
+        msg = f"Protocol version mismatch: expected {PROTOCOL_VERSION}, got {message.get('version')}."
+        log.warning(msg)
+        return msg
+
     if not message.get("cmd"):
-        log.error(f"Error: 'message' dictionary must contain a 'cmd' field.")
-        raise ValueError(f"Error: 'message' dictionary must contain a 'cmd' field.")
+        msg = "'message' must contain 'cmd' field."
+        log.warning(msg)
+        return msg
 
     if not message.get("from"):
-        log.error(f"Error: 'message' dictionary must contain a 'from' field.")
-        raise ValueError(f"Error: 'message' dictionary must contain a 'from' field.")
+        msg = "'message' must contain 'from' field."
+        log.warning(msg)
+        return msg
+    
+    if "payload" not in message:
+        msg = "'message' must contain 'payload' field."
+        log.warning(msg)
+        return msg
+
+    return None
+
+def format_payload(message: dict, expected_keys: list[str]) -> str | None:
+    """Check payload contains expected keys."""
+    payload = message.get("payload")
+    if not isinstance(payload, dict):
+        msg = "'payload' must be a dict."
+        log.warning(msg)
+        return msg
+
+    missing = [k for k in expected_keys if k not in payload]
+    if missing:
+        msg = f"Payload missing keys: {missing}."
+        log.warning(msg)
+        return msg
+
+    return None
