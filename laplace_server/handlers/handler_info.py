@@ -2,7 +2,7 @@
 import logging
 
 # project
-from server_lhc.protocol import make_info_reply, CMD_INFO, LOGGER_NAME
+from protocol import make_info_reply, CMD_INFO, LOGGER_NAME
 
 log = logging.getLogger(LOGGER_NAME)
 
