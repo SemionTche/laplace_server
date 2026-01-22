@@ -116,7 +116,7 @@ including:
 - `CMD_INFO` — Request server information
 - `CMD_PING` — Check server availability
 - `CMD_GET` — Retrieve the server data
-- `CMD_SET` — Update server data
+- `CMD_SET` — For motor realted server, set new positions
 - `CMD_SAVE` — Indicate a saving path
 - `CMD_OPT` — Send optimization-related data
 - `CMD_STOP` — Request server shutdown
@@ -158,8 +158,8 @@ This design keeps the server independent from PyQt while remaining GUI-friendly.
 
 ```
 laplace_server/
-├── serverLHC.py         # Main server implementation
-├── serverController.py  # PyQt6 signal controller
+├── server_lhc.py         # Main server implementation
+├── server_controller.py  # PyQt6 signal controller
 ├── protocol.py          # Protocol constants and helpers
 ├── validations.py       # Input and message validation utilities
 ├── handlers/            # Command handlers
