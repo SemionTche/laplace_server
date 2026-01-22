@@ -99,7 +99,7 @@ Example message:
 ```
 {
   "version": "0.1.6",
-  "cmd": "CMD_GET",
+  "cmd": "GET",
   "from": "client_1",
   "payload": {}
 }
