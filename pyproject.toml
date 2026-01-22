@@ -1,9 +1,53 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "my-repo"
+name = "laplace-server"
 version = "0.1.0"
-description = "My local python utilities"
-dependencies = []
+description = "ZMQ-based server for the LAPLACE-LHC project"
+readme = "README.md"
+requires-python = ">=3.10"
+
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
+
+authors = [
+  { name = "SemionTche" }
+]
+
+dependencies = [
+    "pyzmq"
+]
+
+keywords = ["server", "laplace", "ZMQ",
+            "ZeroMQ", "LHC", "control-system",
+            "instrumentation", "PyQt", "messaging"]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+
+[project.optional-dependencies]
+qt = [
+    "PyQt6"
+]
+
+[project.urls]
+Homepage = "https://github.com/SemionTche/laplace_server"
+Repository = "https://github.com/SemionTche/laplace_server"
+Issues = "https://github.com/SemionTche/laplace_server/issues"
+
+
+[tool.setuptools]
+packages = ["laplace_server"]
+
+
+[tool.setuptools.package-data]
+laplace_server = ["py.typed"]
