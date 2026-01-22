@@ -1,3 +1,12 @@
+'''
+PyQt6 signal controller for the LAPLACE-LHC server.
+
+This module defines the ServerController class, a QObject that provides
+ready-to-use signals corresponding to server events. It allows a ServerLHC
+instance to emit PyQt6 signals via simple callback methods, without requiring
+the server itself to inherit from QObject.
+'''
+
 # libraries
 from PyQt6.QtCore import QObject, pyqtSignal
 
@@ -17,14 +26,14 @@ class ServerController(QObject):
         super().__init__(parent)
 
 
-    def on_server_save_path(self, path: str) -> None:
+    def on_saving_path_changed(self, path: str) -> None:
         '''Emit a 'path' string.'''
         self.saving_path_changed.emit(path)
 
 
-    def on_position_changed(self, position: list) -> None:
-        '''Emit a 'position' list.'''
-        self.position_changed.emit(position)
+    def on_position_changed(self, positions: list) -> None:
+        '''Emit a 'positions' list.'''
+        self.position_changed.emit(positions)
 
 
     def on_get(self) -> None:

@@ -1,5 +1,16 @@
+'''
+Protocol definitions and helpers for the LAPLACE-LHC server.
+
+This module defines protocol constants (commands, devices, versions) and
+helper functions used to build and interpret messages exchanged between
+clients and servers.
+
+It acts as the single source of truth for the communication protocol,
+ensuring consistency across the project.
+'''
+
 # protocol version
-PROTOCOL_VERSION = "0.1.5"
+PROTOCOL_VERSION = "0.1.7"
 
 # commands
 CMD_INFO = "INFO"
@@ -8,8 +19,7 @@ CMD_GET  = "GET"
 CMD_SAVE = "SAVE"
 CMD_SET = "SET"
 CMD_STOP = "STOP"
-CMD_ERROR = "ERROR"
-CMD_OPT = "INFO_OPT"
+CMD_OPT = "OPT"
 
 # devices
 DEVICE_MOTOR = "MOTOR"
@@ -67,7 +77,7 @@ def make_info_request(sender: str, target: str):
         msg="Informations required."
     )
 
-def make_info_reply(sender: str, target: str, *, device, freedom, name, capabilities):
+def make_info_reply(sender: str, target: str, *, device, freedom, name, capabilities, callbacks):
     return make_message(
         cmd=CMD_INFO,
         sender=sender,
@@ -77,6 +87,7 @@ def make_info_reply(sender: str, target: str, *, device, freedom, name, capabili
             "freedom": freedom,
             "name": name,
             "capabilities": capabilities,
+            "callbacks": callbacks
         },
         msg="Informations transmitted."
     )
