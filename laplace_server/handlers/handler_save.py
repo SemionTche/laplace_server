@@ -2,11 +2,11 @@
 import logging
 
 # project
-from protocol import (
+from ..protocol import (
     CMD_SAVE, LOGGER_NAME,
     make_save_reply, make_error, 
 )
-from validations import validate_payload
+from ..validations import validate_payload
 
 log = logging.getLogger(LOGGER_NAME)
 

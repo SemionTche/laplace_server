@@ -2,7 +2,7 @@
 import logging
 
 # project
-from protocol import make_pong, CMD_PING, LOGGER_NAME
+from ..protocol import make_pong, CMD_PING, LOGGER_NAME
 
 log = logging.getLogger(LOGGER_NAME)
 
