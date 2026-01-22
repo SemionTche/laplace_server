@@ -44,7 +44,7 @@ pip install -e .
 
 ```python
 from laplace_server import ServerLHC
-from protocol import DEVICE_MOTOR
+from laplace_server.protocol import DEVICE_MOTOR
 
 server = ServerLHC(
     name="my_server",
@@ -125,9 +125,9 @@ Each command is handled by a dedicated handler function on the server side.
 
 ### Protocol Versioning
 
-The protocol version is defined by `PROTOCOL_VERSION` and is validated for every
-incoming message. If a version mismatch is detected, the message is rejected to
-prevent undefined behavior.
+The protocol version is defined by `laplace_server.protocolPROTOCOL_VERSION` and is 
+validated for every incoming message. If a version mismatch is detected, the message 
+is rejected to prevent undefined behavior.
 
 The protocol version is independent from the package release version
 (`__version__`) and is only updated when the message format or semantics change.
@@ -160,7 +160,7 @@ This design keeps the server independent from PyQt while remaining GUI-friendly.
 ```
 laplace_server/
 ├── server_lhc.py         # Main server implementation
-├── server_controller.py  # PyQt6 signal controller
+├── server_controller.py  # PyQt6 signal controller (optional)
 ├── protocol.py           # Protocol constants and helpers
 ├── validations.py        # Input and message validation utilities
 ├── handlers/             # Command handlers
@@ -171,10 +171,10 @@ laplace_server/
 
 ## Versioning
 
-- `__version__`
+- `laplace_server.__version__`
   Package release version (matches the PyPI version).
 
-- `PROTOCOL_VERSION`
+- `laplace_server..protocol.PROTOCOL_VERSION`
   Internal communication protocol version, used to validate messages and ensure
   compatibility between clients and servers.
 

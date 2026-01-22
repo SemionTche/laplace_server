@@ -9,9 +9,7 @@ from importlib.metadata import version, PackageNotFoundError
 
 # project
 from .server_lhc import ServerLHC
-from . import protocol
-from . import validations
-from . import handlers
+
 
 try:
     __version__ = version("laplace-server")
@@ -20,9 +18,6 @@ except PackageNotFoundError:
 
 __all__ = [
     "ServerLHC",
-    "protocol",
-    "validations",
-    "handlers",
     "__version__"
 ]
 
