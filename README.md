@@ -31,7 +31,7 @@ pip install laplace-server
 Or from source (editable mode):
 
 ```bash
-git clone https://github.com/<your-org>/laplace_server.git
+git clone https://github.com/SemionTche/laplace_server.git
 cd laplace_server
 pip install -e .
 ```
@@ -44,12 +44,13 @@ pip install -e .
 
 ```python
 from laplace_server import ServerLHC
+from protocol import DEVICE_MOTOR
 
 server = ServerLHC(
     name="my_server",
     address="tcp://*:5555",
     freedom=2,
-    device="motor"
+    device=DEVICE_MOTOR
 )
 
 server.start()
