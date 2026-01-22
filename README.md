@@ -117,7 +117,7 @@ including:
 - `CMD_PING` — Check server availability
 - `CMD_GET` — Retrieve the server data
 - `CMD_SET` — Update server data
-- `CMD_SAVE` — Notify a save operation
+- `CMD_SAVE` — Indicate a saving path
 - `CMD_OPT` — Send optimization-related data
 - `CMD_STOP` — Request server shutdown
 
