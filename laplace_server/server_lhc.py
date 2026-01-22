@@ -33,7 +33,7 @@ from .validations import(
     validate_device, validate_freedom, 
     validate_address, validate_message
 )
-from laplace_server import handlers
+from . import handlers
 
 
 log = logging.getLogger(LOGGER_NAME)
