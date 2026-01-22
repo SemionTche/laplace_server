@@ -79,6 +79,59 @@ stopped to allow the Python process to exit cleanly.
 
 ---
 
+## Protocol Overview
+
+The server communicates using a lightweight, JSON-based message protocol over
+ZMQ. Each message must follow a well-defined structure and include a protocol
+version to ensure compatibility between clients and servers.
+
+### Message Structure
+
+All messages exchanged with the server must be JSON objects with the following
+fields:
+
+- `version` — Protocol version identifier
+- `cmd` — Command name
+- `from` — Sender identifier
+- `payload` — Command-specific data (may be empty)
+
+Example message:
+```
+{
+  "version": "0.1.6",
+  "cmd": "CMD_GET",
+  "from": "client_1",
+  "payload": {}
+}
+```
+
+Messages that do not comply with this structure are rejected and may trigger an
+error response from the server.
+
+### Commands
+
+The protocol defines a fixed set of commands used to interact with the server,
+including:
+
+- `CMD_INFO` — Request server information
+- `CMD_PING` — Check server availability
+- `CMD_GET` — Retrieve the server data
+- `CMD_SET` — Update server data
+- `CMD_SAVE` — Notify a save operation
+- `CMD_OPT` — Send optimization-related data
+- `CMD_STOP` — Request server shutdown
+
+Each command is handled by a dedicated handler function on the server side.
+
+### Protocol Versioning
+
+The protocol version is defined by `PROTOCOL_VERSION` and is validated for every
+incoming message. If a version mismatch is detected, the message is rejected to
+prevent undefined behavior.
+
+The protocol version is independent from the package release version
+(`__version__`) and is only updated when the message format or semantics change.
+
 ## PyQt6 Integration
 
 The server does **not** inherit from `QObject`.
