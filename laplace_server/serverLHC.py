@@ -22,18 +22,18 @@ from typing import Callable
 import zmq
 
 # project
-from server_lhc.protocol import (
+from .protocol import (
     CMD_INFO, CMD_PING, CMD_GET,
     CMD_SET, CMD_SAVE, CMD_OPT, CMD_STOP, 
     make_error, make_stop,
     AVAILABLE_DEVICES,
     LOGGER_NAME
 )
-from server_lhc.validations import(
+from .validations import(
     validate_device, validate_freedom, 
     validate_address, validate_message
 )
-from server_lhc import handlers
+from laplace_server import handlers
 
 
 log = logging.getLogger(LOGGER_NAME)
