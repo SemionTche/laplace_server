@@ -141,7 +141,8 @@ Instead, callbacks can be connected to a `ServerController`, which emits PyQt6
 signals.
 
 ```python
-from laplace_server import ServerLHC, ServerController
+from laplace_server import ServerLHC
+from laplace_server.server_controller import ServerController
 
 server = ServerLHC(...)
 controller = ServerController()

@@ -8,7 +8,13 @@ the server itself to inherit from QObject.
 '''
 
 # libraries
-from PyQt6.QtCore import QObject, pyqtSignal
+try:
+    from PyQt6.QtCore import QObject, pyqtSignal
+except ModuleNotFoundError as e:
+    raise ModuleNotFoundError(
+        "PyQt6 is required for ServerController. "
+        "Install with: pip install laplace-server[qt]"
+    ) from e
 
 
 class ServerController(QObject):

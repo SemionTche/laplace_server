@@ -9,7 +9,6 @@ from importlib.metadata import version, PackageNotFoundError
 
 # project
 from .server_lhc import ServerLHC
-from .server_controller import ServerController
 from . import protocol
 from . import validations
 from . import handlers
@@ -21,7 +20,6 @@ except PackageNotFoundError:
 
 __all__ = [
     "ServerLHC",
-    "ServerController",
     "protocol",
     "validations",
     "handlers",
