@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "laplace-server"
-version = "0.1.3"
+version = "0.1.4"
 description = "ZMQ-based server for the LAPLACE-LHC project"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -46,7 +46,7 @@ Issues = "https://github.com/SemionTche/laplace_server/issues"
 
 
 [tool.setuptools]
-packages = ["laplace_server"]
+packages = { find = {} }
 
 
 [tool.setuptools.package-data]
