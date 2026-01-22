@@ -132,6 +132,8 @@ prevent undefined behavior.
 The protocol version is independent from the package release version
 (`__version__`) and is only updated when the message format or semantics change.
 
+---
+
 ## PyQt6 Integration
 
 The server does **not** inherit from `QObject`.
