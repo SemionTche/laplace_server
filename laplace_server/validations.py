@@ -11,7 +11,7 @@ validation succeeds.
 import logging
 
 # project
-from server_lhc.protocol import (
+from .protocol import (
     AVAILABLE_DEVICES, LOGGER_NAME, PROTOCOL_VERSION
 )
 

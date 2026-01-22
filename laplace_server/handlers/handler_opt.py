@@ -2,11 +2,11 @@
 import logging
 
 # project
-from server_lhc.protocol import (
+from protocol import (
     CMD_OPT, LOGGER_NAME,
     make_opt_reply, make_error, 
 )
-from server_lhc.validations import validate_payload
+from validations import validate_payload
 
 log = logging.getLogger(LOGGER_NAME)
 

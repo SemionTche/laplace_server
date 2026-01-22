@@ -32,6 +32,7 @@ AVAILABLE_DEVICES = [DEVICE_MOTOR, DEVICE_CAMERA, DEVICE_GAS, DEVICE_OPT]
 # logger name
 LOGGER_NAME = "laplace.server"
 
+
 def make_message(*,
                  cmd: str,
                  sender: str,

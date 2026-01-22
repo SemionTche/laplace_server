@@ -8,8 +8,8 @@ handlers, and PyQt6 signal controller.
 from importlib.metadata import version, PackageNotFoundError
 
 # project
-from .serverLHC import ServerLHC
-from .serverController import ServerController
+from .server_lhc import ServerLHC
+from .server_controller import ServerController
 from . import protocol
 from . import validations
 from . import handlers
