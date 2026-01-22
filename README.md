@@ -43,7 +43,7 @@ pip install -e .
 ### Start a server
 
 ```python
-from laplace_server import ServerLHC
+from laplace_server.server_lhc import ServerLHC
 from laplace_server.protocol import DEVICE_MOTOR
 
 server = ServerLHC(
@@ -141,7 +141,7 @@ Instead, callbacks can be connected to a `ServerController`, which emits PyQt6
 signals.
 
 ```python
-from laplace_server import ServerLHC
+from laplace_server.server_lhc import ServerLHC
 from laplace_server.server_controller import ServerController
 
 server = ServerLHC(...)

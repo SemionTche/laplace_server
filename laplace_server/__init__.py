@@ -7,9 +7,6 @@ handlers, and PyQt6 signal controller.
 # libraries
 from importlib.metadata import version, PackageNotFoundError
 
-# project
-from .server_lhc import ServerLHC
-
 
 try:
     __version__ = version("laplace-server")
@@ -17,7 +14,6 @@ except PackageNotFoundError:
     __version__ = "0.0.0"
 
 __all__ = [
-    "ServerLHC",
     "__version__"
 ]
 
