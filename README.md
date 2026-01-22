@@ -160,9 +160,9 @@ This design keeps the server independent from PyQt while remaining GUI-friendly.
 laplace_server/
 ├── server_lhc.py         # Main server implementation
 ├── server_controller.py  # PyQt6 signal controller
-├── protocol.py          # Protocol constants and helpers
-├── validations.py       # Input and message validation utilities
-├── handlers/            # Command handlers
+├── protocol.py           # Protocol constants and helpers
+├── validations.py        # Input and message validation utilities
+├── handlers/             # Command handlers
 └── __init__.py
 ```
 
