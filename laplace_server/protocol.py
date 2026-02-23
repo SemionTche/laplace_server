@@ -10,7 +10,7 @@ ensuring consistency across the project.
 '''
 
 # protocol version
-PROTOCOL_VERSION = "0.1.7"
+PROTOCOL_VERSION = "0.1.8"
 
 # commands
 CMD_INFO = "INFO"
