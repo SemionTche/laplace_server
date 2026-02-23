@@ -9,6 +9,7 @@ log = logging.getLogger(LOGGER_NAME)
 
 def handle_get(server, message: dict, target: str) -> None:
     log.debug(f"[Server {server.name}] Received: '{CMD_GET}' from '{target}'.")
+    server.emit("on_get")
     server.socket.send_json(
         make_get_reply(
             sender=server.name, 
@@ -16,6 +17,5 @@ def handle_get(server, message: dict, target: str) -> None:
             data=server.data
         )
     )
-    server.emit("on_get")
     if server.empty_data_after_get:
         server.empty_data()
