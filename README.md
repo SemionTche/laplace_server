@@ -125,7 +125,7 @@ Each command is handled by a dedicated handler function on the server side.
 
 ### Protocol Versioning
 
-The protocol version is defined by `laplace_server.protocolPROTOCOL_VERSION` and is 
+The protocol version is defined by `laplace_server.protocol.PROTOCOL_VERSION` and is 
 validated for every incoming message. If a version mismatch is detected, the message 
 is rejected to prevent undefined behavior.
 
