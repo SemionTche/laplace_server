@@ -10,7 +10,7 @@ ensuring consistency across the project.
 '''
 
 # protocol version
-PROTOCOL_VERSION = "0.1.8"
+PROTOCOL_VERSION = "0.2.0"
 
 # commands
 CMD_INFO = "INFO"
@@ -26,8 +26,10 @@ DEVICE_MOTOR = "MOTOR"
 DEVICE_CAMERA = "CAMERA"
 DEVICE_GAS = "GAS"
 DEVICE_OPT = "OPT"
+DEVICE_SHOT = "SHOT"
 
 AVAILABLE_DEVICES = [DEVICE_MOTOR, DEVICE_CAMERA, DEVICE_GAS, DEVICE_OPT]
+AVAILABLE_CONTROLS = [DEVICE_GAS, DEVICE_MOTOR]
 
 # logger name
 LOGGER_NAME = "laplace.server"
