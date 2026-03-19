@@ -133,6 +133,8 @@ class ServerLHC(threading.Thread):
         self.time_poll_ms = time_poll_ms
         self.time_sleep_ms = time_sleep_ms
 
+        self.name_list = [] # the list of device name belonging to this server
+
         # server context
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
@@ -202,6 +204,12 @@ class ServerLHC(threading.Thread):
         
             d = json.dumps(dict(self._data), indent=4, sort_keys=True, default=str) # making a json
             log.debug(f"[Server {self.name}] Current dictionary:\n" + d )
+
+
+    def set_name_list(self, new_names: list) -> None:
+        '''Set a new list of names belonging to this server.'''
+        self.name_list = new_names
+        log.debug(f"[Server {self.name}] Name list setted: {self.name_list}")
 
     
     def empty_data(self) -> None:

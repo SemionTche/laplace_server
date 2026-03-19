@@ -10,7 +10,7 @@ ensuring consistency across the project.
 '''
 
 # protocol version
-PROTOCOL_VERSION = "0.2.0"
+PROTOCOL_VERSION = "0.2.1"
 
 # commands
 CMD_INFO = "INFO"
@@ -83,7 +83,7 @@ def make_info_request(sender: str, target: str):
         msg="Informations required."
     )
 
-def make_info_reply(sender: str, target: str, *, device, freedom, name, capabilities, callbacks):
+def make_info_reply(sender: str, target: str, *, device, freedom, name, capabilities, callbacks, name_list=[]):
     return make_message(
         cmd=CMD_INFO,
         sender=sender,
@@ -93,7 +93,8 @@ def make_info_reply(sender: str, target: str, *, device, freedom, name, capabili
             "freedom": freedom,
             "name": name,
             "capabilities": capabilities,
-            "callbacks": callbacks
+            "callbacks": callbacks,
+            "name_list": name_list
         },
         msg="Informations transmitted."
     )
