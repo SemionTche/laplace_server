@@ -177,8 +177,21 @@ class ServerLHC(threading.Thread):
             s.connect(("8.8.8.8", 80))  # No traffic is actually sent
             log.debug(f"[Server {self.name}] IPV4 address of the running process: {s.getsockname()[0]}")
             return s.getsockname()[0]
+        except Exception as e:
+            log.warning(f"[Server {self.name}] Could not determine IP via UDP socket trick "
+                        f"(happens if offline and no default route): {e}")
         finally:
             s.close()
+        
+        try:
+            addr = sock.gethostbyname(sock.gethostbyname())
+            log.debug(f"[Server {self.name}] Back up method determined the IPV4 address of the running process: {addr}")
+            return addr
+        except Exception as e:
+            log.error(f"[Server {self.name}] The back up method could not demine the IPV4 address of the running process."
+                      "Returning loopback address...")
+            return "127.0.0.1"
+            
     
     
     def set_data(self, new_data: dict) -> None:
