@@ -10,7 +10,7 @@ ensuring consistency across the project.
 '''
 
 # protocol version
-PROTOCOL_VERSION = "0.2.1"
+PROTOCOL_VERSION = "0.2.1.1"
 
 # commands
 CMD_INFO = "INFO"
@@ -20,6 +20,7 @@ CMD_SAVE = "SAVE"
 CMD_SET = "SET"
 CMD_STOP = "STOP"
 CMD_OPT = "OPT"
+CMD_TOGGLE_SAVING = "TOGGLE SAVING"
 
 # devices
 DEVICE_MOTOR = "MOTOR"
@@ -125,12 +126,22 @@ def make_save_request(sender: str, target: str, *, path: str):
         msg="Save path request."
     )
 
+
 def make_save_reply(sender: str, target: str):
     return make_message(
         cmd=CMD_SAVE,
         sender=sender,
         target=target,
         msg="Saving path changed."
+    )
+
+def make_toggle_saving_status_request(sender: str, target: str, *, saving_status: bool):
+    return make_message(
+        cmd=CMD_TOGGLE_SAVING,
+        sender=sender,
+        target=target,
+        payload={"saving status": saving_status},
+        msg="Toggle saving status request."
     )
 
 def make_error(sender: str, target: str, *, cmd: str, error_msg: str):
