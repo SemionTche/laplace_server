@@ -23,8 +23,9 @@ import zmq
 
 # project
 from .protocol import (
-    CMD_INFO, CMD_PING, CMD_GET,
+    CMD_INFO, CMD_PING, CMD_GET, CMD_SCAN,
     CMD_SET, CMD_SAVE, CMD_OPT, CMD_STOP, 
+    CMD_SET_ACT, CMD_UPDATE_ACTUATORS_POS,
     make_error, make_stop,
     AVAILABLE_DEVICES,
     LOGGER_NAME
@@ -144,7 +145,7 @@ class ServerLHC(threading.Thread):
 
         self.capabilities = [
             CMD_INFO, CMD_PING, CMD_GET, 
-            CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT
+            CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT, CMD_SCAN
         ]
         self._handlers = {
             CMD_INFO: handlers.handle_info,
@@ -153,7 +154,10 @@ class ServerLHC(threading.Thread):
             CMD_SAVE: handlers.handle_save,
             CMD_SET:  handlers.handle_set,
             CMD_OPT:  handlers.handle_opt,
+            CMD_SCAN: handlers.handle_scan,
             CMD_STOP: handlers.handle_stop,
+            CMD_SET_ACT: handlers.handle_set_actuators,
+            CMD_UPDATE_ACTUATORS_POS: handlers.handle_update_actuator_positions
         }
 
         # callable to emit a signal when corresponding messages are 
@@ -162,12 +166,19 @@ class ServerLHC(threading.Thread):
         self.on_position_changed = None
         self.on_get = None
         self.on_opt = None
+        self.on_scan = None
+        self.on_set_actuators = None
+        self.on_update_actuator_positions = None
+
 
         self.callable_list = [
             self.on_saving_path_changed,
             self.on_position_changed,
             self.on_get,
-            self.on_opt
+            self.on_opt, 
+            self.on_scan,
+            self.on_set_actuators, 
+            self.on_update_actuator_positions
         ]
 
 
@@ -351,6 +362,26 @@ class ServerLHC(threading.Thread):
         '''Set the function to use when a 'CMD_OPT' is received.'''
         self.on_opt = func
         log.debug("'on_opt' function set.")
+
+    def set_on_scan(self, func: Callable[[dict], None]) -> None:
+        '''Set the function to use when a 'CMD_SCAN' is received.'''
+        self.on_scan = func
+        log.debug("'on_scan' function set.")
+
+    def set_on_set_actuators(self, func: Callable[[dict], None]) -> None:
+        '''Set the function to use when a 'CMD_SET_ACT' is received.'''
+        self.on_set_actuators = func
+        log.debug("'on_set_actuators' function set.")
+
+    def set_on_set_actuators(self, func: Callable[[dict], None]) -> None:
+        '''Set the function to use when a 'CMD_SET_ACT' is received.'''
+        self.on_set_actuators = func
+        log.debug("'on_set_actuators' function set.")
+
+    def set_on_update_actuator_positions(self, func: Callable[[dict], None]) -> None:
+            '''Set the function to use when a 'CMD_UPDATE_ACTUATORS_POS' is received.'''
+            self.on_update_actuator_positions = func
+            log.debug("'on_update_actuator_positions' function set.")
 
 
     ### stop

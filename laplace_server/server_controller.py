@@ -27,6 +27,9 @@ class ServerController(QObject):
     position_changed = pyqtSignal(list)
     get_received = pyqtSignal()
     opt_received = pyqtSignal(dict)
+    scan_received = pyqtSignal(dict)
+    set_actuators_dict_received = pyqtSignal(dict)
+    scan_actuators_pos_update = pyqtSignal(dict)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -50,3 +53,15 @@ class ServerController(QObject):
     def on_opt(self, data: dict) -> None:
         '''Emit a 'data' dictionary.'''
         self.opt_received.emit(data)
+
+    def on_scan(self, data: dict) -> None:
+        '''Emit a 'data' dictionary.'''
+        self.scan_received.emit(data)
+
+    def on_set_actuators(self, actuators: dict) -> None:
+        '''Emits an 'actuators' dictionary with available actuators'''
+        self.set_actuators_dict_received.emit(actuators)
+
+    def on_new_actuator_pos_received(self, actuators: dict)-> None:
+        '''Emits an 'actuators' dictionary with available actuators'''
+        self.scan_actuators_pos_update.emit(actuators)

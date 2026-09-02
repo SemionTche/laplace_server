@@ -20,18 +20,23 @@ CMD_SAVE = "SAVE"
 CMD_SET = "SET"
 CMD_STOP = "STOP"
 CMD_OPT = "OPT"
+CMD_SET_ACT = "SET ACT"
+CMD_UPDATE_ACTUATORS_POS = "UPDATE ACT POS"
+CMD_SCAN = "SCAN"
 CMD_TOGGLE_SAVING = "TOGGLE SAVING"
+
 
 # devices
 DEVICE_MOTOR = "MOTOR"
 DEVICE_CAMERA = "CAMERA"
 DEVICE_GAS = "GAS"
 DEVICE_OPT = "OPT"
+DEVICE_SCAN = "SCAN"
 DEVICE_SHOT = "SHOT"
 
 AVAILABLE_DEVICES = [
     DEVICE_MOTOR, DEVICE_CAMERA, DEVICE_GAS, 
-    DEVICE_OPT, DEVICE_SHOT
+    DEVICE_OPT, DEVICE_SHOT, DEVICE_SCAN
 ]
 AVAILABLE_CONTROLS = [DEVICE_GAS, DEVICE_MOTOR]
 
@@ -144,6 +149,14 @@ def make_toggle_saving_status_request(sender: str, target: str, *, saving_status
         msg="Toggle saving status request."
     )
 
+def make_toggle_saving_status_reply(sender: str, target: str):
+    return make_message(
+        cmd=CMD_TOGGLE_SAVING,
+        sender=sender,
+        target=target,
+        msg="Saving status toggled."
+    )
+
 def make_error(sender: str, target: str, *, cmd: str, error_msg: str):
     return make_message(
         cmd=cmd,
@@ -197,10 +210,63 @@ def make_opt_update(sender: str, target: str, *, data: dict):
         msg="Opt informations."
     )
 
+
+
 def make_opt_reply(sender: str, target: str):
     return make_message(
         cmd=CMD_OPT,
         sender=sender,
         target=target,
         msg="Updating opt."
+    )
+
+def make_scan_update(sender: str, target: str, *, data: dict):
+    return make_message(
+        cmd=CMD_SCAN,
+        sender=sender,
+        target=target,
+        payload={"data": data},
+        msg="Scan informations."
+    )
+
+def make_scan_reply(sender: str, target: str):
+    return make_message(
+        cmd=CMD_SCAN,
+        sender=sender,
+        target=target,
+        msg="Updating scan"
+    )
+
+def make_set_actuators(sender: str, target: str, actuators: dict):
+    return make_message(
+        cmd=CMD_SET_ACT,
+        sender=sender,
+        target=target,
+        payload={"actuators": actuators},
+        msg="Setting actuators"
+    )
+
+def make_set_actuators_reply(sender: str, target: str):
+    return make_message(
+        cmd=CMD_SET_ACT,
+        sender=sender,
+        target=target,
+        msg="Actuators set on scanners"
+    )
+
+def make_scan_act_position_update(sender: str, target: str, data: dict):
+    return make_message(
+        cmd=CMD_UPDATE_ACTUATORS_POS,
+        sender=sender,
+        target=target,
+        payload={"actuators": data},
+        msg="Updating current actuators positions"
+    )
+
+def make_scan_act_position_reply(sender: str, target: str):
+    return make_message(
+        cmd=CMD_UPDATE_ACTUATORS_POS,
+        sender=sender,
+        target=target,
+        msg="Current actuators positions set on scanners"
     )
