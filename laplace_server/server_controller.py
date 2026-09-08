@@ -29,7 +29,7 @@ class ServerController(QObject):
     opt_received = pyqtSignal(dict)
     scan_received = pyqtSignal(dict)
     set_actuators_dict_received = pyqtSignal(dict)
-    scan_actuators_pos_update = pyqtSignal(dict)
+    actuators_pos_update_received = pyqtSignal(dict)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -39,16 +39,13 @@ class ServerController(QObject):
         '''Emit a 'path' string.'''
         self.saving_path_changed.emit(path)
 
-
     def on_position_changed(self, positions: list) -> None:
         '''Emit a 'positions' list.'''
         self.position_changed.emit(positions)
 
-
     def on_get(self) -> None:
         '''Emit a signal.'''
         self.get_received.emit()
-
 
     def on_opt(self, data: dict) -> None:
         '''Emit a 'data' dictionary.'''
@@ -64,4 +61,5 @@ class ServerController(QObject):
 
     def on_new_actuator_pos_received(self, actuators: dict)-> None:
         '''Emits an 'actuators' dictionary with available actuators'''
-        self.scan_actuators_pos_update.emit(actuators)
+        self.actuators_pos_update_received.emit(actuators)
+        print(f'Signal on new position received')

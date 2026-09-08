@@ -145,7 +145,8 @@ class ServerLHC(threading.Thread):
 
         self.capabilities = [
             CMD_INFO, CMD_PING, CMD_GET, 
-            CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT, CMD_SCAN
+            CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT, CMD_SCAN, 
+            CMD_SET_ACT, CMD_UPDATE_ACTUATORS_POS
         ]
         self._handlers = {
             CMD_INFO: handlers.handle_info,
@@ -373,10 +374,6 @@ class ServerLHC(threading.Thread):
         self.on_set_actuators = func
         log.debug("'on_set_actuators' function set.")
 
-    def set_on_set_actuators(self, func: Callable[[dict], None]) -> None:
-        '''Set the function to use when a 'CMD_SET_ACT' is received.'''
-        self.on_set_actuators = func
-        log.debug("'on_set_actuators' function set.")
 
     def set_on_update_actuator_positions(self, func: Callable[[dict], None]) -> None:
             '''Set the function to use when a 'CMD_UPDATE_ACTUATORS_POS' is received.'''

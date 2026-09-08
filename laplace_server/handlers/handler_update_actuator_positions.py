@@ -6,7 +6,7 @@ from ..protocol import (
     CMD_UPDATE_ACTUATORS_POS, LOGGER_NAME,
     make_scan_reply, make_error, 
 )
-from ..validations import validate_payload
+# from ..validations import validate_payload
 
 log = logging.getLogger(LOGGER_NAME)
 
@@ -14,7 +14,7 @@ log = logging.getLogger(LOGGER_NAME)
 def handle_update_actuator_positions(server, message: dict, target: str) -> None:
     log.info(f"[Server {server.name}] Received: '{CMD_UPDATE_ACTUATORS_POS}' from '{target}'")
     #err = validate_payload(message, expected_keys=["actuators"])
-    err = True
+    err = False
     if err:
         server.socket.send_json(
             make_error(

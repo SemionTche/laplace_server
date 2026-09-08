@@ -8,7 +8,7 @@ log = logging.getLogger(LOGGER_NAME)
 
 
 def handle_info(server, message, target):
-    log.info(f"[Server {server.name}] Received: '{CMD_INFO}' from '{target}'.")
+    log.debug(f"[Server {server.name}] Received: '{CMD_INFO}' from '{target}'.")
     response = make_info_reply(
         sender=server.name,
         target=target,
