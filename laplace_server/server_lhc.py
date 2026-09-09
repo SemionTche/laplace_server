@@ -210,12 +210,14 @@ class ServerLHC(threading.Thread):
     
     def set_data(self, new_data: dict) -> None:
         '''Set a new dictionary.'''
+        
         with self._data_lock:     # if the thread can access the data
             self._data = new_data
             log.debug(f"[Server {self.name}] Server new dictionary setted.")
         
             d = json.dumps(dict(self._data), indent=4, sort_keys=True, default=str) # making a json
             log.debug(f"[Server {self.name}] Current dictionary:\n" + d )
+
 
 
     def set_name_list(self, new_names: list) -> None:
