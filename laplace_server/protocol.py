@@ -21,6 +21,7 @@ CMD_SET = "SET"
 CMD_STOP = "STOP"
 CMD_OPT = "OPT"
 CMD_SET_ACT = "SET ACT"
+CMD_SET_DIAG = "SET DIAG"
 CMD_UPDATE_ACTUATORS_POS = "UPDATE ACT POS"
 CMD_SCAN = "SCAN"
 CMD_TOGGLE_SAVING = "TOGGLE SAVING"
@@ -246,12 +247,29 @@ def make_set_actuators(sender: str, target: str, actuators: dict):
         msg="Setting actuators"
     )
 
+def make_set_diagnostics(sender: str, target: str, diagnostics: dict):
+    return make_message(
+        cmd=CMD_SET_DIAG,
+        sender=sender,
+        target=target,
+        payload={"diagnostics": diagnostics},
+        msg="Setting actuators"
+    )
+
 def make_set_actuators_reply(sender: str, target: str):
     return make_message(
         cmd=CMD_SET_ACT,
         sender=sender,
         target=target,
         msg="Actuators set on scanners"
+    )
+
+def make_set_diagnostics_reply(sender: str, target: str):
+    return make_message(
+        cmd=CMD_SET_DIAG,
+        sender=sender,
+        target=target,
+        msg="Diagnostics set on scanners"
     )
 
 def make_scan_act_position_update(sender: str, target: str, data: dict):

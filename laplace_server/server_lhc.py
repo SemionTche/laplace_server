@@ -26,6 +26,7 @@ from .protocol import (
     CMD_INFO, CMD_PING, CMD_GET, CMD_SCAN,
     CMD_SET, CMD_SAVE, CMD_OPT, CMD_STOP, 
     CMD_SET_ACT, CMD_UPDATE_ACTUATORS_POS,
+    CMD_SET_DIAG,
     make_error, make_stop,
     AVAILABLE_DEVICES,
     LOGGER_NAME
@@ -146,7 +147,7 @@ class ServerLHC(threading.Thread):
         self.capabilities = [
             CMD_INFO, CMD_PING, CMD_GET, 
             CMD_SET, CMD_SAVE, CMD_STOP, CMD_OPT, CMD_SCAN, 
-            CMD_SET_ACT, CMD_UPDATE_ACTUATORS_POS
+            CMD_SET_ACT, CMD_UPDATE_ACTUATORS_POS, CMD_SET_DIAG
         ]
         self._handlers = {
             CMD_INFO: handlers.handle_info,
@@ -158,7 +159,8 @@ class ServerLHC(threading.Thread):
             CMD_SCAN: handlers.handle_scan,
             CMD_STOP: handlers.handle_stop,
             CMD_SET_ACT: handlers.handle_set_actuators,
-            CMD_UPDATE_ACTUATORS_POS: handlers.handle_update_actuator_positions
+            CMD_UPDATE_ACTUATORS_POS: handlers.handle_update_actuator_positions,
+            CMD_SET_DIAG: handlers.handle_set_diagnostics
         }
 
         # callable to emit a signal when corresponding messages are 
@@ -169,6 +171,7 @@ class ServerLHC(threading.Thread):
         self.on_opt = None
         self.on_scan = None
         self.on_set_actuators = None
+        self.on_set_diagnostics = None
         self.on_update_actuator_positions = None
 
 
@@ -179,7 +182,9 @@ class ServerLHC(threading.Thread):
             self.on_opt, 
             self.on_scan,
             self.on_set_actuators, 
+            self.on_set_diagnostics,
             self.on_update_actuator_positions
+            
         ]
 
 
@@ -375,6 +380,11 @@ class ServerLHC(threading.Thread):
         '''Set the function to use when a 'CMD_SET_ACT' is received.'''
         self.on_set_actuators = func
         log.debug("'on_set_actuators' function set.")
+
+    def set_on_set_diagnostics(self, func: Callable[[dict], None]) -> None:
+        '''Set the function to use when a 'CMD_SET_DIAG' is received.'''
+        self.on_set_diagnostics = func
+        log.debug("'on_set_diagnostics' function set.")
 
 
     def set_on_update_actuator_positions(self, func: Callable[[dict], None]) -> None:

@@ -30,6 +30,7 @@ class ServerController(QObject):
     scan_received = pyqtSignal(dict)
     set_actuators_dict_received = pyqtSignal(dict)
     actuators_pos_update_received = pyqtSignal(dict)
+    set_diagnostics_dict_received = pyqtSignal(dict)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -58,6 +59,11 @@ class ServerController(QObject):
     def on_set_actuators(self, actuators: dict) -> None:
         '''Emits an 'actuators' dictionary with available actuators'''
         self.set_actuators_dict_received.emit(actuators)
+
+    def on_set_diagnostics(self, diagnostics: dict) -> None:
+        '''Emits an 'actuators' dictionary with available actuators'''
+        self.set_diagnostics_dict_received.emit(diagnostics)
+
 
     def on_new_actuator_pos_received(self, actuators: dict)-> None:
         '''Emits an 'actuators' dictionary with available actuators'''
