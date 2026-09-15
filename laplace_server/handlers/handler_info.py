@@ -17,6 +17,7 @@ def handle_info(server, message, target):
         name=server.name,
         capabilities=server.capabilities,
         callbacks=server.callable_list,
-        name_list=server.name_list
+        name_list=server.name_list,
+        plottables_list=server.plottables_list
     )
     server.socket.send_json(response)

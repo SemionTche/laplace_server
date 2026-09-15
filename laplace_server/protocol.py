@@ -90,7 +90,7 @@ def make_info_request(sender: str, target: str):
         msg="Informations required."
     )
 
-def make_info_reply(sender: str, target: str, *, device, freedom, name, capabilities, callbacks, name_list=[]):
+def make_info_reply(sender: str, target: str, *, device, freedom, name, capabilities, callbacks, name_list=[], plottables_list=[]):
     return make_message(
         cmd=CMD_INFO,
         sender=sender,
@@ -101,7 +101,8 @@ def make_info_reply(sender: str, target: str, *, device, freedom, name, capabili
             "name": name,
             "capabilities": capabilities,
             "callbacks": callbacks,
-            "name_list": name_list
+            "name_list": name_list, 
+            "plottables_list": plottables_list
         },
         msg="Informations transmitted."
     )

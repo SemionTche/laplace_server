@@ -73,7 +73,8 @@ class ServerLHC(threading.Thread):
             data: dict,
             empty_data_after_get: bool = False,
             time_poll_ms: int = 100,
-            time_sleep_ms: float = 10
+            time_sleep_ms: float = 10, 
+            plottables_list: list = []
         ):
         f'''
             Args:
@@ -136,6 +137,7 @@ class ServerLHC(threading.Thread):
         self.time_sleep_ms = time_sleep_ms
 
         self.name_list = [] # the list of device name belonging to this server
+        self.plottables_list = plottables_list
 
         # server context
         self.context = zmq.Context()
